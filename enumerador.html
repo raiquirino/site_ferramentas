@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Raitec Solutions</title>
+  <link rel="stylesheet" href="css/header.css" />
+  <link rel="stylesheet" href="css/menu_lateral.css">
+  <link rel="stylesheet" href="css/enumerador.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Ferramentas Contábeis</h1>
+    <nav class="top-menu">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="ferramentas.html">Ferramentas Contábeis</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <aside class="side-menu">
+      <ul>
+        <li><a href="filtro.html">Filtro</a></li>
+        <li><a href="enumerador.html">Enumerador</a></li>
+        <li><a href="juntar_ofx.html">Juntar OFX</a></li>
+        <li><a href="ofx_to_excel_to_ofx.html">OFX to Excel to OFX</a></li>
+        <li><a href="xml.html">Leitor XML</a></li>
+        <li><a href="pdf_to_Excel.html">PDF to EXCEL</a></li>
+        <li><a href="#"></a></li>
+        <li><a href="#"></a></li>
+        <li><a href="#"></a></li>
+        <li><a href="#"></a></li>
+        <li><a href="#"></a></li>
+        <li><a href="#"></a></li>
+        <li><a href="#"></a></li>
+        <li><a href="#"></a></li>
+        <li><a href="#"></a></li>
+        <li><a href="#"></a></li>
+        <li><a href="#"></a></li>
+        <li><a href="#"></a></li>
+
+        <!-- Repita conforme necessário -->
+      </ul>
+    </aside>
+
+    <main>
+  <h1>Enumerador de informações</h1>
+
+  <input type="file" id="excelInput" accept=".xlsx" />
+
+    <div id="columnSelectors" class="horizontal-menu">
+      <label>Coluna 1:</label>
+      <input id="col1" maxlength="1" class="col-input" />
+
+      <label>Coluna 2:</label>
+      <input id="col2" maxlength="1" class="col-input" />
+
+      <label>Salvar enumeração em:</label>
+      <input id="destCol" maxlength="1" class="col-input" />
+
+      <button id="btnProcess">Processar</button>
+      <a id="downloadExcel" style="display:none;">Baixar Planilha</a>
+    </div>
+
+    <div id="previewContainer">
+      <h2>Pré-visualização</h2>
+      <table id="previewTable"></table>
+    </div>
+
+    <div id="progress"></div>
+
+  </main>
+
+  <script src="js/enumerador.js"></script>
+</body>
+</html>

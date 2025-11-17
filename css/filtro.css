@@ -1,0 +1,66 @@
+/* Tabela estilo Excel com colunas redimensionáveis e linhas alinhadas */
+
+main h1, h2 {
+  color: #232f3e;
+  margin-bottom: 1em;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  font-size: 14px;
+  table-layout: auto; /* permite ajuste de largura */
+  box-shadow: 0 0 0 1px #ccc;
+}
+
+/* Cabeçalho fixo */
+thead {
+  background-color: #f0f0f0;
+  font-weight: bold;
+  color: #333;
+  position: sticky;
+  top: 180px; /* ajuste conforme altura dos elementos acima */
+  z-index: 9;
+}
+
+/* Cabeçalhos redimensionáveis */
+th {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: auto;
+  text-overflow: ellipsis;
+  min-width: 100px;
+  resize: horizontal;
+}
+
+/* Células redimensionáveis */
+td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: auto;
+  text-overflow: ellipsis;
+  min-width: 100px;
+  resize: horizontal;
+}
+
+/* Corpo da tabela com rolagem */
+tbody {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Linhas alternadas */
+tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tbody tr:hover {
+  background-color: #e6f7ff;
+}

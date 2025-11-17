@@ -1,0 +1,123 @@
+/* Reset e estrutura base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Cabeçalho fixo */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #232f3e;
+  color: white;
+  padding: 10px 20px;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+header h1 {
+  margin-bottom: 10px;
+  font-size: 24px;
+}
+
+/* Menu superior */
+.top-menu ul {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.top-menu ul li {
+  margin-right: 15px;
+}
+
+.top-menu ul li a {
+  color: white;
+  text-decoration: none;
+  padding: 8px 12px;
+  display: block;
+  font-weight: bold;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.top-menu ul li a:hover {
+  background-color: #37475a;
+  color: #ff9900;
+}
+
+/* Layout principal */
+.container {
+  display: flex;
+  margin-top: 100px; /* Compensa o header fixo */
+}
+
+/* Menu lateral */
+.side-menu {
+  width: 220px;
+  background-color: #232f3e;
+  color: white;
+  padding-top: 20px;
+  position: fixed;
+  top: 100px;
+  bottom: 0;
+  overflow-y: auto;
+}
+
+.side-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.side-menu ul li a {
+  display: block;
+  padding: 14px 20px;
+  color: white;
+  text-decoration: none;
+  transition: background-color 0.3s ease, font-size 0.2s ease;
+}
+
+.side-menu ul li:hover,
+.side-menu ul li a:hover {
+  background-color: #5a6b7c;
+  color: #ff9900;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 1.05em;
+}
+
+/* Conteúdo principal */
+main {
+  padding: 20px;
+  flex: 1;
+  margin-left: 220px;
+  min-height: calc(100vh - 100px);
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .top-menu ul {
+    flex-direction: column;
+  }
+
+  .side-menu {
+    position: relative;
+    width: 100%;
+    top: 0;
+  }
+
+  .container {
+    flex-direction: column;
+  }
+
+  main {
+    margin-left: 0;
+    margin-top: 20px;
+  }
+}
