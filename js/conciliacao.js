@@ -36,6 +36,15 @@ function letraParaIndice(letra) {
   return indice - 1;
 }
 
+function indiceParaLetra(indice) {
+  let letra = '';
+  while (indice >= 0) {
+    letra = String.fromCharCode((indice % 26) + 65) + letra;
+    indice = Math.floor(indice / 26) - 1;
+  }
+  return letra;
+}
+
 document.getElementById('conciliarBtn').addEventListener('click', () => {
   const baseLetra = document.getElementById('colunaBase').value;
   const alvoLetra = document.getElementById('colunaAlvo').value;
@@ -90,9 +99,21 @@ function exibirTabela(data) {
   const table = document.createElement('table');
   table.classList.add('tabela-conciliada');
 
+  const numCols = Math.max(...data.map(row => row.length));
+
+  // Linha com letras das colunas (A, B, C...) — PRIMEIRA LINHA
+  const letrasRow = document.createElement('tr');
+  for (let j = 0; j < numCols; j++) {
+    const th = document.createElement('th');
+    th.textContent = indiceParaLetra(j);
+    letrasRow.appendChild(th);
+  }
+  table.appendChild(letrasRow);
+
+  // Linhas da planilha (incluindo cabeçalho original)
   data.forEach((row, i) => {
     const tr = document.createElement('tr');
-    for (let j = 0; j < row.length; j++) {
+    for (let j = 0; j < numCols; j++) {
       const td = document.createElement(i === 0 ? 'th' : 'td');
       td.textContent = row[j] !== undefined ? row[j] : '';
       tr.appendChild(td);
