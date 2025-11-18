@@ -5,11 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Raitec Solutions</title>
   <link rel="stylesheet" href="css/header.css" />
-  <link rel="stylesheet" href="css/menu_lateral.css">
-  <link rel="stylesheet" href="css/juntar_ofx.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="css/menu_lateral.css" />
 </head>
-<body>
+<body class="ferramentas-page">
   <header>
     <h1>Ferramentas Contábeis</h1>
     <nav class="top-menu">
@@ -45,15 +43,18 @@
         <!-- Repita conforme necessário -->
       </ul>
     </aside>
-
     <main>
-  <h1>Unir Arquivos OFX</h1>
-  <input type="file" id="ofxFiles" multiple accept=".ofx" />
-  <br />
-  <button onclick="unirOFX()">Unir e Baixar</button>
+      <section class="pdf-merger">
+        <h2>Juntar Arquivos PDF</h2>
+        <input type="file" id="pdfFiles" multiple accept="application/pdf" />
+        <button onclick="mergePDFs()">Juntar PDFs</button>
+        <p id="status"></p>
+      </section>
+    </main>
+  </div>
 
-  </main>
-
-  <script src="js/juntar_ofx.js"></script>
+  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+  <script src="js/juntar_pdf.js"></script>
+  <script src="js/menu_lateral.js"></script>
 </body>
 </html>
