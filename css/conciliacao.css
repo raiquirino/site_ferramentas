@@ -1,0 +1,10 @@
+.tabela-conciliada {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.tabela-conciliada th,
+.tabela-conciliada td {
+  border: 1px solid #ccc;
+  padding: 8px;
+}
