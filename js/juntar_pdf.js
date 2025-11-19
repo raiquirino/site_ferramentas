@@ -25,10 +25,10 @@ async function mergePDFs() {
   const link = document.createElement('a');
   link.href = url;
   link.download = 'PDF_Juntado.pdf';
-  document.body.appendChild(link); // necessário para Firefox
+  document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link); // remove o link após o clique
-  URL.revokeObjectURL(url); // libera a memória
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 
   status.textContent = 'PDFs juntados com sucesso!';
 }
