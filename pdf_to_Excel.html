@@ -4,6 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Raitec Solutions</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script>
+    // Define o worker do PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+  </script>
+
+  <!-- XLSX para exportar -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <link rel="stylesheet" href="css/header.css" />
   <link rel="stylesheet" href="css/menu_lateral.css">
 <body class="ferramentas-page">
@@ -41,15 +51,17 @@
         <!-- Repita conforme necessário -->
       </ul>
     </aside>
-    <main>
-  <h2>Selecione PDFs para converter em Excel</h2>
-  <input type="file" id="pdfInput" multiple accept=".pdf">
-  <button id="convertBtn">Converter</button>
-  <div id="output"></div>
+  <MAin>
+      <h2>Selecione um ou mais arquivos PDF</h2>
+      <input type="file" id="fileInput" accept=".pdf" multiple>
+      <button id="btnExport">Exportar para Excel</button>
 
-  
+      <table id="tabelaExtrato">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
 </main>
+</div>
 <script src="js/pdf_to_excel.js"></script>
-  </div>
 </body>
 </html>
