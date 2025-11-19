@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Raitec Solutions</title>
+  <title>Raitec Solutions - Juntar PDF</title>
   <link rel="stylesheet" href="css/header.css" />
   <link rel="stylesheet" href="css/menu_lateral.css" />
 </head>
@@ -18,7 +18,7 @@
     </nav>
   </header>
 
-    <div class="container">
+  <div class="container">
     <aside class="side-menu">
       <ul>
         <li><a href="filtro.html">Filtro</a></li>
@@ -30,30 +30,20 @@
         <li><a href="conciliacao.html">Conciliação</a></li>
         <li><a href="juntar_pdf.html">Juntar PDF</a></li>
         <li><a href="pdf_to_excel.html">PDF to Excel</a></li>
-        <li><a href="#"></a></li>
-        <li><a href="#"></a></li>
-        <li><a href="#"></a></li>
-        <li><a href="#"></a></li>
-        <li><a href="#"></a></li>
-        <li><a href="#"></a></li>
-        <li><a href="#"></a></li>
-        <li><a href="#"></a></li>
-        <li><a href="#"></a></li>
-        <!-- Repita conforme necessário -->
       </ul>
     </aside>
+
     <main>
       <h2>📎 Juntar Arquivos PDF</h2>
       <input type="file" id="pdfFiles" multiple accept="application/pdf" />
       <br>
       <button onclick="mergePDFs()">Juntar e Baixar</button>
       <p id="status"></p>
-
     </main>
   </div>
 
   <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-  <script src="js/juntar_pdf.js"></script>
-  <script src="js/menu_lateral.js"></script>
+  <script src="js/juntar_pdf.js" defer></script>
+  <script src="js/menu_lateral.js" defer></script>
 </body>
 </html>

@@ -82,13 +82,9 @@ function iniciarTabelaPDF() {
 
       cells.forEach((cell, colIndex) => {
         const cellRef = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
-
-        // Limpa espaços extras e normaliza
-        let valor = cell.textContent.trim().replace(/\s+/g, ' ');
-
         ws[cellRef] = {
           t: 's',
-          v: valor
+          v: cell.textContent
         };
       });
     });

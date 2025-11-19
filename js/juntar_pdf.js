@@ -8,7 +8,7 @@ async function mergePDFs() {
     return;
   }
 
-  const { PDFDocument } = window.pdfLib;
+  const { PDFDocument } = PDFLib;
   const mergedPdf = await PDFDocument.create();
 
   for (const file of files) {
@@ -22,13 +22,20 @@ async function mergePDFs() {
   const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
 
+  // Gera nome baseado no primeiro arquivo
+  const baseName = files[0].name.replace(/\.pdf$/i, '');
+  const fileName = `${baseName}_Juntado.pdf`;
+
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'PDF_Juntado.pdf';
+  link.download = fileName;
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 
-  status.textContent = 'PDFs juntados com sucesso!';
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+  }, 100);
+
+  status.textContent = `PDFs juntados com sucesso como "${fileName}"!`;
 }
