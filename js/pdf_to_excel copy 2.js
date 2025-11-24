@@ -83,23 +83,13 @@ function iniciarTabelaPDF() {
       cells.forEach((cell, colIndex) => {
         const cellRef = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
 
-        // Função de sanitização
-        let valor = cell.textContent
-          .trim()
-          .replace(/\s+/g, ' ')        // normaliza espaços
-          .replace(/\u00A0/g, ' ')     // remove espaço não separável
-          .replace(/[\r\n\t]/g, '')    // remove quebras e tabs
-          .replace(/[^\x20-\x7E]/g, ''); // remove caracteres não imprimíveis ASCII
+        // Limpa espaços extras e normaliza
+        let valor = cell.textContent.trim().replace(/\s+/g, ' ');
 
-        // Só grava se não estiver vazio
-        if (valor !== '') {
-          // Detecta números
-          if (!isNaN(valor) && valor !== '') {
-            ws[cellRef] = { t: 'n', v: Number(valor) };
-          } else {
-            ws[cellRef] = { t: 's', v: valor };
-          }
-        }
+        ws[cellRef] = {
+          t: 's',
+          v: valor
+        };
       });
     });
 
