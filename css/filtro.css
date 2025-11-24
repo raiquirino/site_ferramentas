@@ -1,10 +1,30 @@
-/* Tabela estilo Excel com colunas redimensionáveis e linhas alinhadas */
+/* Área principal */
+main {
+  display: block;
+  width: 100%;
+  max-width: 1200px;   /* limite da largura do main */
+  margin: 0 auto;      /* centraliza */
+  padding: 10px;
+  overflow-x: auto;    /* scroll horizontal se necessário */
+}
 
-main h1, h2 {
+/* Área superior fixa (título, upload, checkboxes) */
+#header-area {
+  position: sticky;
+  top: 0;                  /* fixa no topo do main */
+  background-color: #fff;  /* fundo sólido */
+  z-index: 20;             /* maior que o cabeçalho da tabela */
+  padding: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* separação visual */
+}
+
+/* Títulos */
+main h1, main h2 {
   color: #232f3e;
   margin-bottom: 1em;
 }
 
+/* Tabela estilo Excel */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -14,39 +34,39 @@ table {
   box-shadow: 0 0 0 1px #ccc;
 }
 
-/* Cabeçalho fixo */
+/* Cabeçalho da tabela fixo */
 thead {
   background-color: #f0f0f0;
   font-weight: bold;
   color: #333;
   position: sticky;
-  top: 180px; /* ajuste conforme altura dos elementos acima */
-  z-index: 9;
+  top: 60px;   /* fica logo abaixo da área superior fixa */
+  z-index: 10;
 }
 
 /* Cabeçalhos redimensionáveis */
 th {
   border: 1px solid #ccc;
-  padding: 8px;
+  padding: 6px;          /* padding menor para compactar */
   text-align: left;
   vertical-align: middle;
   white-space: nowrap;
-  overflow: auto;
+  overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 100px;
+  min-width: 80px;       /* largura mínima reduzida */
   resize: horizontal;
 }
 
 /* Células redimensionáveis */
 td {
   border: 1px solid #ccc;
-  padding: 8px;
+  padding: 6px;          /* padding menor */
   text-align: left;
   vertical-align: middle;
   white-space: nowrap;
-  overflow: auto;
+  overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 100px;
+  min-width: 80px;       /* largura mínima reduzida */
   resize: horizontal;
 }
 

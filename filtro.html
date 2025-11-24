@@ -45,24 +45,24 @@
       </ul>
     </aside>
     </div>
+      <main>
+        <h2>📊 Visualizador de Planilha Excel</h2>
 
-    <main>
-      <h2>📊 Visualizador de Planilha Excel</h2>
+        <!-- Área fixa para upload e checkboxes -->
+        <section id="header-area">
+          <label for="fileInput"><strong>Selecione um arquivo Excel:</strong></label><br />
+          <input type="file" id="fileInput" accept=".xlsx, .xls" />
+          <div id="checkboxes"></div>
+        </section>
 
-      <section class="sticky-top">
-        <label for="fileInput"><strong>Selecione um arquivo Excel:</strong></label><br />
-        <input type="file" id="fileInput" accept=".xlsx, .xls" />
-      </section>
-
-      <section id="checkboxes" class="sticky-top"></section>
-
-      <section>
-        <table id="dataTable" aria-label="Tabela de dados importados">
-          <thead></thead>
-          <tbody></tbody>
-        </table>
-      </section>
-    </main>
+        <!-- Tabela -->
+        <section>
+          <table id="dataTable" aria-label="Tabela de dados importados">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </section>
+      </main>
   </div>
 
   <script src="js/filtro.js"></script>
