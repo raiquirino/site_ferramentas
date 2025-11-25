@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Raitec Solutions</title>
+
+  <!-- SheetJS / XLSX (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <!-- CSS externos -->
+  <link rel="stylesheet" href="css/header.css" />
+  <link rel="stylesheet" href="css/menu_lateral.css" />
+</head>
+<body class="ferramentas-page">
+  <header>
+    <h1>Ferramentas Contábeis</h1>
+    <nav class="top-menu">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="ferramentas.html">Ferramentas Contábeis</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container">
+    <aside class="side-menu">
+      <ul>
+        <li><a href="filtro.html">Filtro</a></li>
+        <li><a href="enumerador.html">Enumerador</a></li>
+        <li><a href="juntar_ofx.html">Juntar OFX</a></li>
+        <li><a href="juntar_pdf.html">Juntar PDF</a></li>
+        <li><a href="juntar_excel.html">Juntar Excel</a></li>
+        <li><a href="ofx_to_excel_to_ofx.html">OFX to Excel to OFX</a></li>
+        <li><a href="xml.html">Leitor XML</a></li>
+        <li><a href="extrato_pdf_excel.html">PDF to EXCEL</a></li>
+        <li><a href="conciliacao.html">Conciliação</a></li>
+        <li><a href="pdf_to_excel.html">PDF to Excel</a></li>
+        <li><a href="agrupandor_de_planilha_colibri.html">Agrupador</a></li>
+      </ul>
+    </aside>
+
+    <main>
+      <h2>Leitor e Agrupador de Planilhas</h2>
+
+      <div class="section">
+        <h3>Selecionar arquivo</h3>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+        <div id="metaInfo" class="hint"></div>
+      </div>
+
+      <!-- Escolha das colunas -->
+      <div class="section">
+        <h3>Escolha as colunas</h3>
+        <div class="grid">
+          <div>
+            <label>Data:</label>
+            <input type="text" id="colData" placeholder="Ex: A" />
+          </div>
+          <div>
+            <label>Descrição:</label>
+            <input type="text" id="colDesc" placeholder="Ex: B" />
+          </div>
+          <div>
+            <label>Valor 1:</label>
+            <input type="text" id="colVal1" placeholder="Ex: C" />
+          </div>
+          <div>
+            <label>Valor 2:</label>
+            <input type="text" id="colVal2" placeholder="Ex: D" />
+          </div>
+        </div>
+        <button id="processBtn">Agrupar dados</button>
+        <div class="hint">Digite as letras das colunas (A, B, C...). O agrupamento soma Valor1 e Valor2 por Data + Descrição.</div>
+      </div>
+
+      <!-- Botões de salvar -->
+      <div class="section">
+        <h3>Salvar</h3>
+        <button id="saveOriginal">Salvar planilha original</button>
+        <button id="saveV1">Salvar apenas Valor 1</button>
+        <button id="saveV2">Salvar apenas Valor 2</button>
+        <div class="hint">Você pode salvar a planilha original ou gerar arquivos separados com Valor1 e Valor2.</div>
+      </div>
+
+      <!-- Resultado agrupado -->
+      <div class="section">
+        <h3>Resultado agrupado</h3>
+        <div id="resultContainer"></div>
+      </div>
+
+      <!-- Tabela carregada -->
+      <div class="section">
+        <h3>Planilha carregada</h3>
+        <div id="tableContainer"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Script separado -->
+  <script src="js/agrupandor_de_planilha_colibri.js"></script>
+</body>
+</html>
