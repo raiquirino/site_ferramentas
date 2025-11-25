@@ -36,30 +36,35 @@
       </ul>
     </aside>
 
-  <main>
-  <h1>Conversor OFX ↔ Excel</h1>
+    <main>
+      <h1>Conversor OFX ↔ Excel</h1>
 
-  <section>
-    <h2>OFX → Excel (.xlsx)</h2>
-    <input type="file" id="ofxInput" multiple accept==".ofx" />
-    <button id="btnConvertOFX">Converter OFX</button>
-    <div id="progressOFX"></div>
-    <div id="progressBarContainer"><div id="progressBarOFX"></div></div>
-    <a id="downloadExcel" class="download-link" style="display:none;">Baixar Excel</a>
-  </section>
+      <section>
+        <h2>OFX → Excel (.xlsx)</h2>
+        <!-- corrigido accept -->
+        <input type="file" id="ofxInput" multiple accept=".ofx" />
+        <button id="btnConvertOFX">Converter OFX</button>
+        <div id="progressOFX"></div>
+        <div id="progressBarContainer"><div id="progressBarOFX"></div></div>
 
-  <hr />
+        <!-- novo contêiner para múltiplos links -->
+        <div id="downloadExcelLinks"></div>
+      </section>
 
-  <section>
-    <h2>Excel (.xlsx) → OFX</h2>
-    <input type="file" id="csvInput" accept=".xlsx,.xls,.csv" />
-    <button id="btnConvertCSV">Converter Excel</button>
-    <div id="progressCSV"></div>
-    <div id="progressBarContainer"><div id="progressBarCSV"></div></div>
-    <a id="downloadOFX" class="download-link" style="display:none;">Baixar OFX</a>
-  </section>
+      <hr />
 
-</main>
+      <section>
+        <h2>Excel (.xlsx) → OFX</h2>
+        <!-- permitir múltiplos arquivos -->
+        <input type="file" id="csvInput" multiple accept=".xlsx,.xls,.csv" />
+        <button id="btnConvertCSV">Converter Excel</button>
+        <div id="progressCSV"></div>
+        <div id="progressBarContainer"><div id="progressBarCSV"></div></div>
+
+        <!-- novo contêiner para múltiplos links -->
+        <div id="downloadOFXLinks"></div>
+      </section>
+    </main>
 
 <script src="js/ofx_to_excel_to_ofx.js"></script>
 
