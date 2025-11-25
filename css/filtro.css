@@ -1,66 +1,89 @@
-/* Tabela estilo Excel com colunas redimensionáveis e linhas alinhadas */
-
-main h1, h2 {
+/* Estilos aplicados apenas dentro do main */
+main h1,
+main h2 {
   color: #232f3e;
   margin-bottom: 1em;
+  font-family: Arial, sans-serif;
 }
 
-table {
+/* Container da tabela com rolagem horizontal */
+main .table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Tabela */
+main table {
   width: 100%;
   border-collapse: collapse;
-  background-color: #ffffff;
+  background-color: #fff;
   font-size: 14px;
-  table-layout: auto; /* permite ajuste de largura */
+  table-layout: auto;
   box-shadow: 0 0 0 1px #ccc;
 }
 
 /* Cabeçalho fixo */
-thead {
+main thead {
   background-color: #f0f0f0;
   font-weight: bold;
   color: #333;
   position: sticky;
-  top: 180px; /* ajuste conforme altura dos elementos acima */
-  z-index: 9;
+  top: 0; /* mais previsível */
+  z-index: 10;
 }
 
 /* Cabeçalhos redimensionáveis */
-th {
+main th {
   border: 1px solid #ccc;
   padding: 8px;
   text-align: left;
   vertical-align: middle;
   white-space: nowrap;
-  overflow: auto;
   text-overflow: ellipsis;
-  min-width: 100px;
+  min-width: 120px;
   resize: horizontal;
+  overflow: hidden;
+  cursor: col-resize;
 }
 
-/* Células redimensionáveis */
-td {
+/* Células */
+main td {
   border: 1px solid #ccc;
   padding: 8px;
   text-align: left;
   vertical-align: middle;
   white-space: nowrap;
-  overflow: auto;
   text-overflow: ellipsis;
-  min-width: 100px;
+  min-width: 120px;
   resize: horizontal;
+  overflow: hidden;
 }
 
-/* Corpo da tabela com rolagem */
-tbody {
-  max-height: 400px;
+/* Corpo da tabela com rolagem vertical */
+main tbody {
+  max-height: 100vh;
   overflow-y: auto;
+  display: block;
+}
+
+main thead,
+main tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
 }
 
 /* Linhas alternadas */
-tbody tr:nth-child(even) {
+main tbody tr:nth-child(even) {
   background-color: #f9f9f9;
 }
 
-tbody tr:hover {
+main tbody tr:hover {
   background-color: #e6f7ff;
+}
+
+/* Acessibilidade: foco em células redimensionáveis */
+main th:focus,
+main td:focus {
+  outline: 2px solid #4a90e2;
 }

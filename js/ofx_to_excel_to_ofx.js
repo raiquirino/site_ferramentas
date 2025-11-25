@@ -10,7 +10,15 @@ function formatDate(raw) {
 function toExcel(transactions) {
   const worksheetData = [
     ["Date", "Memo", "Amount"],
-    ...transactions.map(t => [t.date, t.memo, parseFloat(t.amount)])
+    ...transactions.map(t => {
+      const [day, month, year] = t.date.split("/");
+      const excelDate = new Date(`${year}-${month}-${day}`);
+      return [
+        excelDate, // objeto Date
+        t.memo.replace(/\s+/g, " ").trim(), // texto limpo
+        Number(t.amount) // número
+      ];
+    })
   ];
 
   const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
@@ -18,7 +26,7 @@ function toExcel(transactions) {
   XLSX.utils.book_append_sheet(workbook, worksheet, "Transações");
 
   const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-  return new Blob([wbout], { type: "application/octet-stream" });
+  return new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 }
 
 document.getElementById("btnConvertOFX").addEventListener("click", () => {
