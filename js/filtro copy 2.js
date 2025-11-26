@@ -4,15 +4,11 @@ let selectedIndexes = [];
 let rawSheet = null;
 let columnFormats = {};
 let filteredRows = [];
-let formattedCache = {};   // cache de células formatadas
+let formattedCache = {};   // <<< NOVO: cache de células formatadas
 
 window.applyFiltersTrigger = null;
 
-// ----------------------
-// EVENTOS INICIAIS
-// ----------------------
 document.getElementById('fileInput').addEventListener('change', handleFile, false);
-document.getElementById('btnExport').addEventListener('click', exportToExcel);
 
 function handleFile(e) {
   const file = e.target.files[0];
@@ -33,15 +29,16 @@ function handleFile(e) {
     initFormatCache();
     createCheckboxes(headers);
     createGlobalFilter();
-    updateTable(true);
+    updateTable(true);    // <<< primeira vez, recria cabeçalho
   };
 
   reader.readAsArrayBuffer(file);
 }
 
-// ----------------------
-// FORMATAÇÃO E CACHE
-// ----------------------
+/*--------------------------------------------------
+  FORMATAÇÃO E CACHE
+---------------------------------------------------*/
+
 function detectColumnFormats() {
   columnFormats = {};
   selectedIndexes.forEach(i => columnFormats[i] = 'original');
@@ -49,16 +46,19 @@ function detectColumnFormats() {
 
 function initFormatCache() {
   formattedCache = {};
-  selectedIndexes.forEach(col => formattedCache[col] = {});
+  selectedIndexes.forEach(col => {
+    formattedCache[col] = {};
+  });
 }
 
 function invalidateColumnCache(colIdx) {
   formattedCache[colIdx] = {};
 }
 
-// ----------------------
-// CHECKBOXES
-// ----------------------
+/*--------------------------------------------------
+  CHECKBOXES E FILTROS
+---------------------------------------------------*/
+
 function createCheckboxes(headers) {
   const container = document.getElementById('checkboxes');
   container.innerHTML = '<strong>Selecionar colunas:</strong><br>';
@@ -87,9 +87,6 @@ function createCheckboxes(headers) {
   });
 }
 
-// ----------------------
-// FILTRO GLOBAL
-// ----------------------
 function createGlobalFilter() {
   const container = document.getElementById('globalFilter');
   container.innerHTML = '';
@@ -115,31 +112,33 @@ function createGlobalFilter() {
   container.appendChild(wrapper);
 }
 
-// ----------------------
-// UPDATE TABLE
-// ----------------------
+/*--------------------------------------------------
+  UPDATE TABLE
+---------------------------------------------------*/
+
 function updateTable(rebuildHeader = false) {
-  renderTableWithFilters(
-    allData,
-    selectedIndexes.map(i => headers[i] ?? ''),
-    selectedIndexes,
-    rebuildHeader
-  );
+  renderTableWithFilters(allData, selectedIndexes.map(i => headers[i] ?? ''), selectedIndexes, rebuildHeader);
 }
 
-// ----------------------
-// RENDER TABLE
-// ----------------------
+/*--------------------------------------------------
+  RENDER TABLE
+---------------------------------------------------*/
+
 function renderTableWithFilters(data, selectedHeaders, selectedIndexes, rebuildHeader, chunkSize = 500) {
   const table = document.getElementById('dataTable');
 
   if (rebuildHeader) renderHeader(table, selectedHeaders, selectedIndexes);
 
-  if (!table.querySelector('tbody')) table.appendChild(document.createElement('tbody'));
+  const tbody = table.querySelector('tbody');
+  if (!tbody) {
+    const tb = document.createElement('tbody');
+    table.appendChild(tb);
+  }
 
   function applyFilters() {
     const searchValue = normalize(document.getElementById('searchInput')?.value || '');
     const columnSpec = document.getElementById('searchColumnInput')?.value || '';
+
     const targetIndex = resolveColumnIndex(columnSpec);
     const col = Number.isInteger(targetIndex) ? targetIndex : selectedIndexes[0] ?? null;
 
@@ -159,6 +158,7 @@ function renderTableWithFilters(data, selectedHeaders, selectedIndexes, rebuildH
     tbody.innerHTML = '';
 
     let start = 0;
+
     function chunk() {
       const end = Math.min(start + chunkSize, filteredRows.length);
       const frag = document.createDocumentFragment();
@@ -178,6 +178,7 @@ function renderTableWithFilters(data, selectedHeaders, selectedIndexes, rebuildH
 
       tbody.appendChild(frag);
       start = end;
+
       if (start < filteredRows.length) setTimeout(chunk, 0);
     }
 
@@ -188,9 +189,10 @@ function renderTableWithFilters(data, selectedHeaders, selectedIndexes, rebuildH
   applyFilters();
 }
 
-// ----------------------
-// HEADER RENDER
-// ----------------------
+/*--------------------------------------------------
+  HEADER RENDER
+---------------------------------------------------*/
+
 function renderHeader(table, selectedHeaders, selectedIndexes) {
   table.innerHTML = '';
 
@@ -203,12 +205,10 @@ function renderHeader(table, selectedHeaders, selectedIndexes) {
 
     const thExcel = document.createElement('th');
     thExcel.textContent = columnLetter(col);
-    thExcel.style.position = 'relative';
     excelRow.appendChild(thExcel);
 
     const thHeader = document.createElement('th');
     thHeader.textContent = header;
-    thHeader.style.position = 'relative';
 
     // select de formato
     const fmt = document.createElement('select');
@@ -218,6 +218,7 @@ function renderHeader(table, selectedHeaders, selectedIndexes) {
       o.textContent = opt;
       fmt.appendChild(o);
     });
+
     fmt.value = columnFormats[col];
     fmt.style.marginLeft = '6px';
 
@@ -227,78 +228,18 @@ function renderHeader(table, selectedHeaders, selectedIndexes) {
       updateTable(false);
     });
 
-    // grip de redimensionamento
-    const grip = document.createElement('div');
-    grip.className = 'col-resize-grip';
     thHeader.appendChild(fmt);
-    thHeader.appendChild(grip);
-
     headerRow.appendChild(thHeader);
   });
 
   thead.append(excelRow, headerRow);
   table.appendChild(thead);
-
-  enableColumnResize(table);
 }
 
-// ----------------------
-// REDIMENSIONAMENTO DE COLUNAS
-// ----------------------
-function enableColumnResize(table) {
-  const headerLetters = table.querySelectorAll('thead tr:first-child th');
-  const headerNames = table.querySelectorAll('thead tr:last-child th');
+/*--------------------------------------------------
+  CELLS
+---------------------------------------------------*/
 
-  headerNames.forEach((th, index) => {
-    const grip = th.querySelector('.col-resize-grip');
-    if (!grip) return;
-
-    let startX, startWidth;
-
-    grip.addEventListener('mousedown', e => {
-      startX = e.pageX;
-      startWidth = th.offsetWidth;
-      document.body.style.userSelect = 'none';
-
-      function resize(ev) {
-        const newWidth = Math.max(50, startWidth + (ev.pageX - startX));
-
-        if (headerLetters[index]) {
-          headerLetters[index].style.width = newWidth + "px";
-          headerLetters[index].style.minWidth = newWidth + "px";
-          headerLetters[index].style.maxWidth = newWidth + "px";
-        }
-
-        headerNames[index].style.width = newWidth + "px";
-        headerNames[index].style.minWidth = newWidth + "px";
-        headerNames[index].style.maxWidth = newWidth + "px";
-
-        const rows = table.querySelectorAll('tbody tr');
-        rows.forEach(tr => {
-          const td = tr.children[index];
-          if (td) {
-            td.style.width = newWidth + "px";
-            td.style.minWidth = newWidth + "px";
-            td.style.maxWidth = newWidth + "px";
-          }
-        });
-      }
-
-      function stop() {
-        document.removeEventListener('mousemove', resize);
-        document.removeEventListener('mouseup', stop);
-        document.body.style.userSelect = '';
-      }
-
-      document.addEventListener('mousemove', resize);
-      document.addEventListener('mouseup', stop);
-    });
-  });
-}
-
-// ----------------------
-// CELLS
-// ----------------------
 function formatCell(rowIdx, colIdx) {
   if (formattedCache[colIdx]?.[rowIdx]) return formattedCache[colIdx][rowIdx];
 
@@ -316,10 +257,14 @@ function formatCell(rowIdx, colIdx) {
       const d = new Date(cell.v);
       if (!isNaN(d)) out = `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
     }
-  } else if (fmt === 'valor' && typeof cell.v === 'number') {
+  }
+
+  else if (fmt === 'valor' && typeof cell.v === 'number') {
     out = XLSX.SSF.format('#,##0.00', cell.v)
       .replace(/,/g, '#').replace(/\./g, ',').replace(/#/g, '.');
-  } else {
+  }
+
+  else {
     out = cell.w ?? String(cell.v);
   }
 
@@ -327,34 +272,10 @@ function formatCell(rowIdx, colIdx) {
   return out;
 }
 
-// ----------------------
-// EXPORTAR PARA EXCEL
-// ----------------------
-function exportToExcel() {
-  if (!allData.length || !selectedIndexes.length) {
-    alert('Não há dados para exportar!');
-    return;
-  }
+/*--------------------------------------------------
+  HELPERS
+---------------------------------------------------*/
 
-  const exportData = [];
-  exportData.push(selectedIndexes.map(i => columnLetter(i)));
-  exportData.push(selectedIndexes.map(i => headers[i] ?? ''));
-
-  const rowsToExport = filteredRows.length ? filteredRows : allData.slice(1).map((_, i) => i + 1);
-  rowsToExport.forEach(rowIdx => {
-    const row = selectedIndexes.map(col => formatCell(rowIdx, col));
-    exportData.push(row);
-  });
-
-  const ws = XLSX.utils.aoa_to_sheet(exportData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Export');
-  XLSX.writeFile(wb, 'export.xlsx');
-}
-
-// ----------------------
-// HELPERS
-// ----------------------
 const normalize = t => t.toLowerCase().replace(/[ .]/g, '').replace(/,/g, '.');
 
 function columnLetter(index) {

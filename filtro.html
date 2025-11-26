@@ -20,7 +20,7 @@
     </nav>
   </header>
 
-    <div class="container">
+  <div class="container">
     <aside class="side-menu">
       <ul>
         <li><a href="filtro.html">Filtro</a></li>
@@ -36,29 +36,36 @@
         <li><a href="agrupandor_de_planilha_colibri.html">Agrupador</a></li>
       </ul>
     </aside>
-    </div>
-      <main>
-        <h2>📊 Visualizador de Planilha Excel</h2>
-
-        <!-- Área fixa para upload e checkboxes -->
-        <section id="header-area">
-          <label for="fileInput"><strong>Selecione um arquivo Excel:</strong></label><br />
-          <input type="file" id="fileInput" accept=".xlsx, .xls" />
-            <!-- Botão de exportação -->
-            <button id="btnExport">💾 Exportar para Excel</button>
-
-          <div id="checkboxes"></div>
-        </section>
-
-        <!-- Tabela -->
-        <section>
-          <table id="dataTable" aria-label="Tabela de dados importados">
-            <thead></thead>
-            <tbody></tbody>
-          </table>
-        </section>
-      </main>
   </div>
+
+  <main>
+    <h2>📊 Visualizador de Planilha Excel</h2>
+
+    <!-- Área fixa para upload, filtro e checkboxes -->
+    <section id="header-area">
+      <label for="fileInput"><strong>Selecione um arquivo Excel:</strong></label><br />
+      <input type="file" id="fileInput" accept=".xlsx, .xls" />
+      <!-- Botão de exportação -->
+      <button id="btnExport">💾 Exportar para Excel</button>
+
+      <!-- Campo único de busca -->
+      <div id="globalFilter" style="margin-top:10px;">
+        <label for="searchInput"><strong>Buscar:</strong></label><br />
+        <!-- O input será criado dinamicamente pelo JS -->
+      </div>
+
+      <!-- Checkboxes das colunas -->
+      <div id="checkboxes" style="margin-top:10px;"></div>
+    </section>
+
+    <!-- Tabela -->
+    <section>
+      <table id="dataTable" aria-label="Tabela de dados importados">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
 
   <script src="js/filtro.js"></script>
 </body>

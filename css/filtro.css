@@ -40,10 +40,9 @@ main th {
   vertical-align: middle;
   white-space: nowrap;
   text-overflow: ellipsis;
-  min-width: 120px;
-  resize: horizontal;
+  min-width: 80px;
   overflow: hidden;
-  cursor: col-resize;
+  position: relative; /* necessário para o grip */
 }
 
 /* Células */
@@ -54,8 +53,7 @@ main td {
   vertical-align: middle;
   white-space: nowrap;
   text-overflow: ellipsis;
-  min-width: 120px;
-  resize: horizontal;
+  min-width: 80px;
   overflow: hidden;
 }
 
@@ -82,8 +80,19 @@ main tbody tr:hover {
   background-color: #e6f7ff;
 }
 
-/* Acessibilidade: foco em células redimensionáveis */
+/* Acessibilidade: foco em células */
 main th:focus,
 main td:focus {
   outline: 2px solid #4a90e2;
+}
+
+/* Grip de redimensionamento */
+th .col-resize-grip {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
 }
