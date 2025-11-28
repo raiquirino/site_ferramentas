@@ -339,9 +339,9 @@ function atualizarTotais(baseIdx, alvoIdx, concIdx) {
 
   area.innerHTML = `
     <div style="display:flex; gap:30px; font-weight:bold; flex-wrap: wrap;">
-      <div>🟦 Total coluna base (${indiceParaLetra(baseIdx)}): ${totalBase.toLocaleString('pt-BR')}</div>
-      <div>🟩 Total coluna alvo (${indiceParaLetra(alvoIdx)}): ${totalAlvo.toLocaleString('pt-BR')}</div>
-      <div>🟨 Total conciliados: ${totalConc}</div>
+      <div>Total coluna base (${indiceParaLetra(baseIdx)}): ${totalBase.toLocaleString('pt-BR')}</div>
+      <div>Total coluna alvo (${indiceParaLetra(alvoIdx)}): ${totalAlvo.toLocaleString('pt-BR')}</div>
+      <div>Total conciliados: ${totalConc}</div>
     </div>
   `;
 }
