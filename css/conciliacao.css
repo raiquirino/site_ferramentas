@@ -8,3 +8,11 @@
   border: 1px solid #ccc;
   padding: 8px;
 }
+
+#totaisArea {
+  display: flex;       /* ativa o flex layout */
+  gap: 20px;           /* espaço entre os itens */
+  flex-wrap: wrap;     /* permite quebrar linha se necessário */
+  align-items: center; /* alinha verticalmente os itens no centro */
+  font-weight: bold;   /* mantém o estilo em negrito */
+}
