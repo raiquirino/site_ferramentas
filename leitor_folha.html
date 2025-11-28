@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>Extrator PDF Folha de Pagamento - Blocos Separados</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  h2 { margin-top: 40px; border-bottom: 2px solid #333; padding-bottom: 5px; }
+  table { border-collapse: collapse; width: 48%; margin-bottom: 30px; float: left; margin-right: 4%; }
+  table:last-child { margin-right: 0; }
+  th, td { border: 1px solid #555; padding: 6px 10px; font-size: 12px; }
+  th { background: #eee; }
+  .clearfix::after { content: ""; clear: both; display: table; }
+  #output { max-width: 1200px; }
+</style>
+</head>
+<body>
+
+<h1>Extrator PDF Folha de Pagamento - Blocos Separados</h1>
+<input type="file" id="pdfFile" accept="application/pdf" />
+<div id="output"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<script>
+document.getElementById('pdfFile').addEventListener('change', async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const data = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data}).promise;
+
+  let elementos = [];
+
+  // Ler texto de todas as páginas
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    content.items.forEach(item => {
+      elementos.push({
+        text: item.str.trim(),
+        x: item.transform[4],
+        y: item.transform[5],
+        page: p
+      });
+    });
+  }
+
+  // Agrupar elementos por linhas (aproximadamente mesma coordenada y)
+  let linhas = [];
+  elementos.forEach(el => {
+    let linha = linhas.find(l => Math.abs(l.y - el.y) < 3 && l.page === el.page);
+    if (!linha) {
+      linha = { y: el.y, page: el.page, itens: [] };
+      linhas.push(linha);
+    }
+    linha.itens.push(el);
+  });
+
+  // Ordenar linhas: páginas em ordem e dentro da página da cima para baixo (y decrescente)
+  linhas.sort((a,b) => a.page - b.page || b.y - a.y);
+
+  // Ordenar itens dentro das linhas da esquerda para direita
+  linhas.forEach(l => l.itens.sort((a,b) => a.x - b.x));
+
+  // Detectar divisor vertical para colunas (um valor x que separa esquerda/direita)
+  let xs = elementos.map(e => e.x).sort((a,b) => a-b);
+  let divisor = xs[Math.floor(xs.length * 0.53)];
+
+  // Função para montar tabela HTML a partir de linhas, agrupando os textos por coluna
+  function montarTabela(linhasBloco) {
+    let html = "<table>";
+    html += "<thead><tr><th>RUBRICA</th><th>DESCRIÇÃO</th><th>HORAS/DIAS</th><th>VALOR</th></tr></thead><tbody>";
+
+    linhasBloco.forEach(l => {
+      // Agrupar palavras da linha em colunas pela posição x
+      let esquerda = l.itens.filter(i => i.x < divisor);
+      let direita = l.itens.filter(i => i.x >= divisor);
+
+      // Processar cada lado
+      function processaLado(itens) {
+        if (itens.length < 3) return null;
+        let textos = itens.map(i => i.text);
+        let rub = textos[0];
+        let val = textos[textos.length - 1];
+        let horas = textos[textos.length - 2];
+        let desc = textos.slice(1, textos.length - 2).join(" ");
+        return {rub, desc, horas, val};
+      }
+
+      let ladoEsq = processaLado(esquerda);
+      let ladoDir = processaLado(direita);
+
+      // Montar linha esquerda se existir
+      if (ladoEsq) {
+        html += `<tr><td>${ladoEsq.rub}</td><td>${ladoEsq.desc}</td><td>${ladoEsq.horas}</td><td>${ladoEsq.val}</td></tr>`;
+      }
+
+      // Montar linha direita se existir
+      if (ladoDir) {
+        html += `<tr><td>${ladoDir.rub}</td><td>${ladoDir.desc}</td><td>${ladoDir.horas}</td><td>${ladoDir.val}</td></tr>`;
+      }
+    });
+
+    html += "</tbody></table>";
+    return html;
+  }
+
+  // Agora vamos separar o conteúdo em blocos:
+  // - Procurar linhas com títulos ("Folha de Pagamento", "Totalização" etc)
+  // - Separar blocos de linhas entre esses títulos
+
+  let blocos = [];
+  let blocoAtual = { titulo: "Introdução", linhas: [] };
+
+  linhas.forEach(l => {
+    // Verifica se a linha é um título de bloco
+    let linhaTexto = l.itens.map(i => i.text.toLowerCase()).join(" ");
+    if (
+      linhaTexto.includes("folha de pagamento") ||
+      linhaTexto.includes("totalização") ||
+      linhaTexto.includes("proventos") ||
+      linhaTexto.includes("descontos")
+    ) {
+      // Se tem um bloco em andamento, salva
+      if (blocoAtual.linhas.length > 0) {
+        blocos.push(blocoAtual);
+      }
+      blocoAtual = { titulo: l.itens.map(i => i.text).join(" "), linhas: [] };
+    } else {
+      blocoAtual.linhas.push(l);
+    }
+  });
+  if (blocoAtual.linhas.length > 0) {
+    blocos.push(blocoAtual);
+  }
+
+  // Gerar HTML final separando blocos e mostrando tabelas lado a lado
+  let outputHTML = "";
+
+  blocos.forEach(bloco => {
+    outputHTML += `<h2>${bloco.titulo}</h2><div class="clearfix">`;
+    
+    // Vamos dividir as linhas em esqueda e direita do bloco para manter a estrutura
+    let esquerda = [];
+    let direita = [];
+
+    bloco.linhas.forEach(l => {
+      const e = l.itens.filter(i => i.x < divisor);
+      const d = l.itens.filter(i => i.x >= divisor);
+
+      if (e.length >= 3) esquerda.push({y:l.y, itens: e});
+      if (d.length >= 3) direita.push({y:l.y, itens: d});
+    });
+
+    outputHTML += montarTabela(esquerda);
+    outputHTML += montarTabela(direita);
+
+    outputHTML += "</div>";
+  });
+
+  document.getElementById("output").innerHTML = outputHTML;
+
+});
+</script>
+
+</body>
+</html>
