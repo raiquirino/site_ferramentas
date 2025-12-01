@@ -44,19 +44,19 @@
       <div id="colunasSelect" style="display: none; margin-top: 15px;">
 
         <!-- Seleção de colunas -->
-        <label for="colunaBase">Coluna Base (ex: A):</label>
+        <label for="colunaBase">Coluna Referência:</label>
         <input type="text" id="colunaBase" size="1" maxlength="3" />
 
-        <label for="colunaAlvo">Coluna Alvo (ex: B):</label>
+        <label for="colunaAlvo">Coluna Comparada:</label>
         <input type="text" id="colunaAlvo" size="1" maxlength="3" />
 
-        <label for="colunaConciliacao">Coluna de Conciliação (ex: C ou nova):</label>
+        <label for="colunaConciliacao">Conciliação:</label>
         <input type="text" id="colunaConciliacao" size="1" maxlength="3" />
 
         <!-- Botões de ação -->
         <div style="margin-top: 10px;">
           <button id="conciliarBtn">Conciliar</button>
-          <button id="baixarBtn" style="display: none;">Baixar Planilha Conciliada</button>
+          <button id="baixarBtn" style="display: none;">Baixar</button>
         </div>
 
         <!-- 🔍 Filtro Conciliado / Não Conciliado / Todos (botões) -->
@@ -77,7 +77,7 @@
 
     </section>
   </main>
-    <script src="js/conciliacaoX.js"></script>
+    <script src="js/conciliacao.js"></script>
   </div>
 </body>
 </html>

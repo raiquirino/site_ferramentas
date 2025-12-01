@@ -1,20 +1,19 @@
 let workbook, worksheet, data = [];
 
 // ===============================
-// 📌 CARREGA ARQUIVO EXCEL (preservando formatação)
+// 📌 CARREGA ARQUIVO EXCEL
 // ===============================
 document.getElementById('excelFile').addEventListener('change', handleFile);
 
 function handleFile(e) {
   const reader = new FileReader();
-  reader.onload = function (event) {
+  reader.onload = function(event) {
     const dataBinary = new Uint8Array(event.target.result);
     workbook = XLSX.read(dataBinary, { type: 'array' });
 
     const sheetName = workbook.SheetNames[0];
     const ws = workbook.Sheets[sheetName];
 
-    // Extrai valores formatados
     const range = XLSX.utils.decode_range(ws['!ref']);
     worksheet = [];
 
@@ -24,7 +23,9 @@ function handleFile(e) {
         const cellAddress = { c: C, r: R };
         const cellRef = XLSX.utils.encode_cell(cellAddress);
         const cell = ws[cellRef];
-        row.push(cell ? (cell.w !== undefined ? cell.w : (cell.v !== undefined ? cell.v : "")) : "");
+
+        let valor = cell ? cell.v : "";
+        row.push(valor);
       }
       worksheet.push(row);
     }
@@ -38,14 +39,14 @@ function handleFile(e) {
     document.getElementById('colunasSelect').style.display = 'block';
 
     exibirTabela(data);
-    aplicarFiltro();
+    aplicarFiltro("todos");
     limparTotais();
   };
   reader.readAsArrayBuffer(e.target.files[0]);
 }
 
 // ===============================
-// 📌 CONVERTE LETRAS PARA ÍNDICE
+// 📌 CONVERTE LETRAS ↔ ÍNDICE
 // ===============================
 function letraParaIndice(letra) {
   letra = letra.toUpperCase().trim();
@@ -57,9 +58,6 @@ function letraParaIndice(letra) {
   return indice - 1;
 }
 
-// ===============================
-// 📌 CONVERTE ÍNDICE PARA LETRA
-// ===============================
 function indiceParaLetra(indice) {
   let letra = '';
   while (indice >= 0) {
@@ -93,7 +91,6 @@ document.getElementById('conciliarBtn').addEventListener('click', () => {
     for (let i = 1; i < data.length; i++) data[i][concIdx] = "";
   }
 
-  // 🔄 LÓGICA DE CONCILIAÇÃO
   for (let i = 1; i < data.length; i++) {
     const baseVal = data[i][baseIdx];
     const conciliadoBase = data[i][concIdx];
@@ -113,14 +110,14 @@ document.getElementById('conciliarBtn').addEventListener('click', () => {
   }
 
   exibirTabela(data);
-  aplicarFiltro();
+  aplicarFiltro(document.querySelector('#filtroBotoes .ativo')?.dataset.filtro || "todos");
   atualizarTotais(baseIdx, alvoIdx, concIdx);
 
   document.getElementById('baixarBtn').style.display = 'inline-block';
 });
 
 // ===============================
-// 📌 EXIBE TABELA
+// 📌 EXIBE TABELA NO HTML
 // ===============================
 function exibirTabela(data) {
   const container = document.getElementById('tabelaContainer');
@@ -131,14 +128,13 @@ function exibirTabela(data) {
 
   const numCols = Math.max(...data.map(row => row.length));
 
-  // Linha com letras das colunas e botão de tipo
+  // Cabeçalho com letras
   const letrasRow = document.createElement('tr');
   for (let j = 0; j < numCols; j++) {
     const th = document.createElement('th');
     th.textContent = indiceParaLetra(j);
     th.style.position = "relative";
 
-    // botão de tipo (oculto até hover)
     const btnContainer = document.createElement('div');
     btnContainer.style.position = "absolute";
     btnContainer.style.top = "100%";
@@ -149,12 +145,12 @@ function exibirTabela(data) {
     btnContainer.style.zIndex = "10";
     btnContainer.style.padding = "2px";
 
-    ['Original', 'Data', 'Valor'].forEach(tipo => {
+    ['Original','Data','Valor'].forEach(tipo=>{
       const btn = document.createElement('button');
       btn.textContent = tipo;
-      btn.style.margin = "1px";
-      btn.style.fontSize = "10px";
-      btn.addEventListener('click', (e) => {
+      btn.style.margin="1px";
+      btn.style.fontSize="10px";
+      btn.addEventListener('click', e=>{
         e.stopPropagation();
         atualizarTipoColuna(j, tipo);
       });
@@ -162,22 +158,24 @@ function exibirTabela(data) {
     });
 
     th.appendChild(btnContainer);
-
-    th.addEventListener('mouseenter', () => btnContainer.style.display = "block");
-    th.addEventListener('mouseleave', () => btnContainer.style.display = "none");
-
+    th.addEventListener('mouseenter', ()=>btnContainer.style.display="block");
+    th.addEventListener('mouseleave', ()=>btnContainer.style.display="none");
     letrasRow.appendChild(th);
   }
   table.appendChild(letrasRow);
 
-  // Linhas da planilha
-  data.forEach((row, i) => {
+  // Linhas de dados
+  data.forEach((row,i)=>{
     const tr = document.createElement('tr');
-    for (let j = 0; j < numCols; j++) {
-      const td = document.createElement(i === 0 ? 'th' : 'td');
-      const valor = row[j] !== undefined ? row[j] : '';
+    for(let j=0;j<numCols;j++){
+      const td = document.createElement(i===0?'th':'td');
+      let valor = row[j]!==undefined ? row[j] : '';
+
+      // Se for número, converte para pt-BR na exibição
+      if(typeof valor === 'number') valor = valor.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
+
       td.textContent = valor;
-      td.dataset.original = valor; // armazena original
+      td.dataset.original = row[j]; // mantém valor real para cálculos
       tr.appendChild(td);
     }
     table.appendChild(tr);
@@ -189,56 +187,57 @@ function exibirTabela(data) {
 // ===============================
 // 📌 ALTERAR TIPO DE COLUNA
 // ===============================
-function atualizarTipoColuna(colIdx, tipo) {
+function atualizarTipoColuna(colIdx, tipo){
   const table = document.querySelector('.tabela-conciliada');
-  if (!table) return;
+  if(!table) return;
 
   const linhas = table.querySelectorAll('tr');
-  for (let i = 1; i < linhas.length; i++) {
-    const td = linhas[i].querySelectorAll('td, th')[colIdx];
-    if (!td) continue;
+  for(let i=1;i<linhas.length;i++){
+    const td = linhas[i].querySelectorAll('td,th')[colIdx];
+    if(!td) continue;
 
     const valorOriginal = td.dataset.original;
 
-    if (tipo === 'Original') {
+    if(tipo==='Original'){
       td.textContent = valorOriginal;
-      td.dataset.tipo = 'original';
-    } else if (tipo === 'Data') {
+      td.dataset.tipo='original';
+      data[i][colIdx]=valorOriginal;
+    }
+    else if(tipo==='Data'){
       let dataObj = new Date(valorOriginal);
-      if (!isNaN(dataObj)) {
-        const dia = String(dataObj.getDate()).padStart(2,'0');
-        const mes = String(dataObj.getMonth()+1).padStart(2,'0');
-        const ano = dataObj.getFullYear();
-        td.textContent = `${dia}/${mes}/${ano}`;
-        td.dataset.tipo = 'data';
+      if(!isNaN(dataObj)){
+        const dia=String(dataObj.getDate()).padStart(2,'0');
+        const mes=String(dataObj.getMonth()+1).padStart(2,'0');
+        const ano=dataObj.getFullYear();
+        td.textContent=`${dia}/${mes}/${ano}`;
+        td.dataset.tipo='data';
+        data[i][colIdx]=dataObj;
       } else {
-        td.textContent = valorOriginal;
-        td.dataset.tipo = 'original';
+        td.textContent=valorOriginal;
+        td.dataset.tipo='original';
+        data[i][colIdx]=valorOriginal;
       }
-    } else if (tipo === 'Valor') {
+    }
+    else if(tipo==='Valor'){
       let numStr = valorOriginal.toString().trim();
-
-      // Detecta se é estilo brasileiro (1.234,56)
-      if (numStr.includes(',')) {
-        numStr = numStr.replace(/\./g,'').replace(',', '.');
-      }
-
-      let num = parseFloat(numStr);
-
-      if (!isNaN(num)) {
-        td.textContent = num.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-        td.dataset.originalFloat = num;
-        td.dataset.tipo = 'valor';
+      if(numStr.includes(',')) numStr = numStr.replace(/\./g,'').replace(',','.');
+      let num=parseFloat(numStr);
+      if(!isNaN(num)){
+        td.textContent=num.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
+        td.dataset.originalFloat=num;
+        td.dataset.tipo='valor';
+        data[i][colIdx]=num;
       } else {
-        td.textContent = valorOriginal;
-        td.dataset.tipo = 'original';
+        td.textContent=valorOriginal;
+        td.dataset.tipo='original';
+        data[i][colIdx]=valorOriginal;
       }
     }
   }
 }
 
 // ===============================
-// 📌 EXPORTAR PLANILHA RESPEITANDO FILTRO
+// 📌 EXPORTAR PLANILHA (preservando formato exibido)
 // ===============================
 document.getElementById('baixarBtn').addEventListener('click', () => {
   const table = document.querySelector('.tabela-conciliada');
@@ -247,19 +246,10 @@ document.getElementById('baixarBtn').addEventListener('click', () => {
   const linhas = table.querySelectorAll('tr');
   const dataFiltrada = [];
 
-  linhas.forEach((tr, i) => {
-    if (i === 0) {
-      const ths = tr.querySelectorAll('th');
-      dataFiltrada.push(Array.from(ths).map(th => th.textContent));
-    } else if (tr.style.display !== "none") {
-      const tds = tr.querySelectorAll('td, th');
-      dataFiltrada.push(Array.from(tds).map(td => {
-        if (td.dataset.tipo === 'valor' && td.dataset.originalFloat !== undefined) {
-          return parseFloat(td.dataset.originalFloat); // exporta número correto
-        }
-        return td.textContent;
-      }));
-    }
+  linhas.forEach(tr => {
+    if (tr.style.display === "none") return; // ignora linhas ocultas
+    const tds = tr.querySelectorAll('td,th');
+    dataFiltrada.push(Array.from(tds).map(td => td.textContent));
   });
 
   const ws = XLSX.utils.aoa_to_sheet(dataFiltrada);
@@ -268,84 +258,76 @@ document.getElementById('baixarBtn').addEventListener('click', () => {
   XLSX.writeFile(wb, 'planilha_conciliada.xlsx');
 });
 
+
 // ===============================
 // 📌 FILTRO DE CONCILIAÇÃO
 // ===============================
-function aplicarFiltro() {
-  const select = document.getElementById('filtroConciliacao');
-  if (!select) return;
+document.querySelectorAll('#filtroBotoes .filtro-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#filtroBotoes .filtro-btn').forEach(b=>b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    aplicarFiltro(btn.dataset.filtro);
+  });
+});
 
-  const filtro = select.value;
+function aplicarFiltro(filtro){
   const concLetra = document.getElementById('colunaConciliacao').value;
-  if (!concLetra) return;
+  if(!concLetra) return;
 
   const concIdx = letraParaIndice(concLetra);
   const table = document.querySelector('.tabela-conciliada');
-  if (!table) return;
+  if(!table) return;
 
   const linhas = table.querySelectorAll('tr');
-
-  for (let i = 2; i < linhas.length; i++) {
+  for(let i=2;i<linhas.length;i++){
     const td = linhas[i].querySelectorAll('td')[concIdx];
     const valor = td ? td.textContent.trim().toLowerCase() : "";
-
-    if (filtro === "todos") linhas[i].style.display = "";
-    else if (filtro === "sim" && valor === "sim") linhas[i].style.display = "";
-    else if (filtro === "nao" && valor !== "sim") linhas[i].style.display = "";
-    else linhas[i].style.display = "none";
+    if(filtro==="todos") linhas[i].style.display="";
+    else if(filtro==="sim" && valor==="sim") linhas[i].style.display="";
+    else if(filtro==="nao" && valor!=="sim") linhas[i].style.display="";
+    else linhas[i].style.display="none";
   }
 
   const baseIdx = letraParaIndice(document.getElementById('colunaBase').value);
   const alvoIdx = letraParaIndice(document.getElementById('colunaAlvo').value);
-  const concIdx2 = letraParaIndice(document.getElementById('colunaConciliacao').value);
-
-  atualizarTotais(baseIdx, alvoIdx, concIdx2);
+  atualizarTotais(baseIdx, alvoIdx, concIdx);
 }
 
-document.getElementById('filtroConciliacao')
-  .addEventListener('change', aplicarFiltro);
-
 // ===============================
-// 📌 TOTALIZAÇÕES (linhas visíveis)
+// 📌 TOTALIZAÇÕES
 // ===============================
-function atualizarTotais(baseIdx, alvoIdx, concIdx) {
+function atualizarTotais(baseIdx, alvoIdx, concIdx){
   const area = document.getElementById("totaisArea");
-  if (!area) return;
+  if(!area) return;
 
   const table = document.querySelector('.tabela-conciliada');
-  if (!table) return;
+  if(!table) return;
 
   const linhas = table.querySelectorAll("tr");
+  let totalBase=0, totalAlvo=0, totalConc=0;
 
-  let totalBase = 0;
-  let totalAlvo = 0;
-  let totalConc = 0;
-
-  for (let i = 2; i < linhas.length; i++) {
-    if (linhas[i].style.display === "none") continue;
-
+  for(let i=2;i<linhas.length;i++){
+    if(linhas[i].style.display==="none") continue;
     const tds = linhas[i].querySelectorAll("td");
-    const baseValStr = tds[baseIdx]?.textContent.trim().replace(/\./g,'').replace(',', '.');
-    const alvoValStr = tds[alvoIdx]?.textContent.trim().replace(/\./g,'').replace(',', '.');
-
-    const baseVal = parseFloat(baseValStr);
-    const alvoVal = parseFloat(alvoValStr);
+    const baseValStr = tds[baseIdx]?.dataset.original ?? tds[baseIdx]?.textContent;
+    const alvoValStr = tds[alvoIdx]?.dataset.original ?? tds[alvoIdx]?.textContent;
     const concVal = tds[concIdx]?.textContent.trim();
 
-    if (!isNaN(baseVal)) totalBase += baseVal;
-    if (!isNaN(alvoVal)) totalAlvo += alvoVal;
-    if (concVal === "Sim") totalConc++;
+    const baseVal=parseFloat(baseValStr);
+    const alvoVal=parseFloat(alvoValStr);
+
+    if(!isNaN(baseVal)) totalBase+=baseVal;
+    if(!isNaN(alvoVal)) totalAlvo+=alvoVal;
+    if(concVal==="Sim") totalConc++;
   }
 
-  area.innerHTML = `
-    <div style="margin-bottom:8px;">📌 <strong>Totalizações (Filtradas)</strong></div>
-    <div>🟦 Total da coluna base (${indiceParaLetra(baseIdx)}): <strong>${totalBase.toLocaleString('pt-BR')}</strong></div>
-    <div>🟩 Total da coluna alvo (${indiceParaLetra(alvoIdx)}): <strong>${totalAlvo.toLocaleString('pt-BR')}</strong></div>
-    <div>🟨 Total conciliados (visíveis): <strong>${totalConc}</strong></div>
+  area.innerHTML=`
+    <div style="display:flex; gap:30px; font-weight:bold; flex-wrap: wrap;">
+      <div>Total coluna base (${indiceParaLetra(baseIdx)}): ${totalBase.toLocaleString('pt-BR')}</div>
+      <div>Total coluna alvo (${indiceParaLetra(alvoIdx)}): ${totalAlvo.toLocaleString('pt-BR')}</div>
+      <div>Total conciliados: ${totalConc}</div>
+    </div>
   `;
 }
 
-function limparTotais() {
-  const area = document.getElementById("totaisArea");
-  if (area) area.innerHTML = "";
-}
+function limparTotais(){const area=document.getElementById("totaisArea");if(area) area.innerHTML="";}
