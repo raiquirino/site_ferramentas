@@ -20,7 +20,7 @@
     </nav>
   </header>
 
-    <div class="container">
+  <div class="container">
     <aside class="side-menu">
       <ul>
         <li><a href="filtro.html">Filtro</a></li>
@@ -36,50 +36,50 @@
         <li><a href="combinacoes.html">Combinações</a></li>
       </ul>
     </aside>
-  <main>
-    <section class="conciliador">
-      <h2>Conciliador de Planilhas</h2>
 
-      <!-- Upload do Excel -->
-      <input type="file" id="excelFile" accept=".xlsx, .xls" />
+    <main>
+      <section class="conciliador">
+        <h2>Conciliador de Planilhas</h2>
 
-      <div id="colunasSelect" style="display: none; margin-top: 15px;">
+        <!-- Upload do Excel -->
+        <input type="file" id="excelFile" accept=".xlsx, .xls" />
 
-        <!-- Seleção de colunas -->
-        <label for="colunaBase">Coluna Referência:</label>
-        <input type="text" id="colunaBase" size="1" maxlength="3" />
+        <div id="colunasSelect" style="display: none; margin-top: 15px;">
+          <!-- Seleção de colunas -->
+          <label for="colunaBase">Coluna Referência:</label>
+          <input type="text" id="colunaBase" size="1" maxlength="3" />
 
-        <label for="colunaAlvo">Coluna Comparada:</label>
-        <input type="text" id="colunaAlvo" size="1" maxlength="3" />
+          <label for="colunaAlvo">Coluna Comparada:</label>
+          <input type="text" id="colunaAlvo" size="1" maxlength="3" />
 
-        <label for="colunaConciliacao">Conciliação:</label>
-        <input type="text" id="colunaConciliacao" size="1" maxlength="3" />
+          <label for="colunaConciliacao">Conciliação:</label>
+          <input type="text" id="colunaConciliacao" size="1" maxlength="3" />
 
-        <!-- Botões de ação -->
-        <div style="margin-top: 10px;">
-          <button id="conciliarBtn">Conciliar</button>
-          <button id="baixarBtn" style="display: none;">Baixar</button>
+          <!-- Botões de ação -->
+          <div style="margin-top: 10px;">
+            <button id="conciliarBtn">Conciliar</button>
+            <button id="baixarBtn" style="display: none;">Baixar</button>
+          </div>
+
+          <!-- 🔍 Filtro Conciliado / Não Conciliado / Todos (botões) -->
+          <div id="filtroBotoes" style="margin-top: 15px;">
+            <strong>Filtrar Conciliação:</strong><br>
+            <button class="filtro-btn ativo" data-filtro="todos" style="margin-right: 5px;">Todos</button>
+            <button class="filtro-btn" data-filtro="sim" style="margin-right: 5px;">Conciliado</button>
+            <button class="filtro-btn" data-filtro="nao">Não Conciliado</button>
+          </div>
         </div>
 
-        <!-- 🔍 Filtro Conciliado / Não Conciliado / Todos (botões) -->
-        <div id="filtroBotoes" style="margin-top: 15px;">
-          <strong>Filtrar Conciliação:</strong><br>
-          <button class="filtro-btn ativo" data-filtro="todos" style="margin-right: 5px;">Todos</button>
-          <button class="filtro-btn" data-filtro="sim" style="margin-right: 5px;">Conciliado</button>
-          <button class="filtro-btn" data-filtro="nao">Não Conciliado</button>
-        </div>
+        <!-- 📌 Área onde serão exibidas as totalizações -->
+        <section id="totaisArea" style="margin-top: 20px; font-weight: bold;"></section>
 
-      </div>
-
-      <!-- 📌 Área onde serão exibidas as totalizações -->
-      <section id="totaisArea" style="margin-top: 20px; font-weight: bold;"></section>
-
-      <!-- 📊 TABELA RESULTANTE -->
-      <div id="tabelaContainer" style="margin-top: 20px;"></div>
-
-    </section>
-  </main>
-    <script src="js/conciliacao.js"></script>
+        <!-- 📊 TABELA RESULTANTE -->
+        <div id="tabelaContainer" style="margin-top: 20px;"></div>
+      </section>
+    </main>
   </div>
+
+  <!-- JS do Conciliador -->
+  <script src="js/conciliacao.js"></script>
 </body>
 </html>
