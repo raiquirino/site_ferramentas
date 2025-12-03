@@ -8,6 +8,21 @@
   <link rel="stylesheet" href="css/menu_lateral.css" />
   <link rel="stylesheet" href="css/conciliacao.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    /* Estilo simples para os botões de formatação */
+    #botoesFormatoGlobal {
+      margin: 10px 0;
+    }
+    #botoesFormatoGlobal button {
+      margin-right: 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    #botoesFormatoGlobal button.ativo {
+      background-color: #007bff;
+      color: #fff;
+    }
+  </style>
 </head>
 <body class="ferramentas-page">
   <header>
@@ -20,7 +35,7 @@
     </nav>
   </header>
 
-    <div class="container">
+  <div class="container">
     <aside class="side-menu">
       <ul>
         <li><a href="filtro.html">Filtro</a></li>
@@ -43,7 +58,6 @@
         <input type="file" id="excelFile" accept=".xlsx, .xls" />
 
         <div id="colunasSelect" style="display: none;">
-
           <label for="colunaBase">Coluna Base (ex: A):</label>
           <input type="text" id="colunaBase" maxlength="3" />
 
@@ -65,7 +79,13 @@
               <option value="nao">Não Conciliado</option>
             </select>
           </div>
+        </div>
 
+        <!-- 📌 BOTOES DE FORMATAÇÃO EXTERNOS (sempre visíveis) -->
+        <div id="botoesFormatoGlobal">
+          <button data-tipo="Original">Original</button>
+          <button data-tipo="Data">Data</button>
+          <button data-tipo="Valor">Valor</button>
         </div>
 
         <!-- 📌 Área onde serão exibidas as totalizações -->
@@ -73,9 +93,8 @@
 
         <!-- 📊 TABELA RESULTANTE -->
         <div id="tabelaContainer"></div>
-
       </section>
-  </main>
+    </main>
     <script src="js/conciliacao.js"></script>
   </div>
 </body>
