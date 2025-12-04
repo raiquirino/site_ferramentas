@@ -2,8 +2,9 @@ let originalData = [];
 let currentRange = null;
 let currentFormat = null;
 let formatActive = false;
-let concIdxAtual = null;
+let concIdxAtual = null; // Índice da coluna de conciliação atual
 let filtroAtual = "todos";
+let originalFileName = ""; // guarda nome do arquivo carregado
 
 const controlsContainer = document.getElementById('controls-container');
 const conciliaButton = document.getElementById('btn-concilia');
@@ -12,6 +13,8 @@ const conciliaButton = document.getElementById('btn-concilia');
 document.getElementById('input-excel').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
+
+    originalFileName = file.name.replace(/\.[^/.]+$/, ""); // remove extensão
 
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -46,7 +49,7 @@ function renderTable(data, range) {
     table += '<tr>';
     for (let C = range.s.c; C <= range.e.c; ++C) {
         const colLetter = XLSX.utils.encode_col(C);
-        table += `<th data-col="${C}">${colLetter}</th>`;
+        table += `<th data-col="${C}"><div class="header-cell"><span>${colLetter}</span></div></th>`;
     }
     table += '</tr>';
 
@@ -63,6 +66,14 @@ function renderTable(data, range) {
 
     table += '</table>';
     document.getElementById('tabela-container').innerHTML = table;
+
+    document.querySelectorAll('#excel-table th').forEach(th => {
+        th.addEventListener('click', () => {
+            if (!formatActive) return;
+            const colIndex = th.getAttribute('data-col');
+            applyFormatToColumn(colIndex, currentFormat);
+        });
+    });
 }
 
 // ==================== FORMATAÇÃO ====================
@@ -96,7 +107,19 @@ function applyFormatToColumn(colIndex, format) {
 document.getElementById('btn-original').addEventListener('click', () => activateFormat('original'));
 document.getElementById('btn-data').addEventListener('click', () => activateFormat('data'));
 document.getElementById('btn-valor').addEventListener('click', () => activateFormat('valor'));
-function activateFormat(formatType) { currentFormat = formatType; formatActive = true; }
+
+function activateFormat(formatType) { 
+    currentFormat = formatType; 
+    formatActive = true; 
+}
+
+document.addEventListener('click', (event) => {
+    const tableContainer = document.getElementById('tabela-container');
+    const clickedInsideTable = tableContainer.contains(event.target);
+    const clickedButton = document.getElementById('format-buttons')?.contains(event.target);
+
+    if (!clickedInsideTable && !clickedButton) formatActive = false;
+});
 
 // ==================== CONCILIAÇÃO ====================
 conciliaButton.addEventListener('click', () => {
@@ -117,31 +140,31 @@ conciliaButton.addEventListener('click', () => {
     const table = document.getElementById('excel-table');
     const headerRow = table.rows[0];
 
-    // Cabeçalho: manter a letra da coluna
+    // ==================== CABEÇALHO CONCILIAÇÃO ====================
     if (!headerRow.cells[colConc]) {
         while (headerRow.cells.length <= colConc) {
-            const th = document.createElement('th');
-            headerRow.appendChild(th);
+            headerRow.insertCell();
         }
     }
-    headerRow.cells[colConc].textContent = XLSX.utils.encode_col(colConc);
 
-    // Inicializar células da conciliação
-    for (let i = 1; i < table.rows.length; i++) {
+    // Linha 0 = letra da coluna
+    headerRow.cells[colConc].innerHTML = `<div class="header-cell conc-cell"><span>${colConcLetter}</span></div>`;
+
+    // Linha 1 = "Conciliado"
+    if (!table.rows[1].cells[colConc]) {
+        table.rows[1].insertCell(colConc);
+    }
+    table.rows[1].cells[colConc].innerHTML = `<div class="header-cell conc-cell"><span>Conciliado</span></div>`;
+    table.rows[1].cells[colConc].style.textAlign = 'center';
+
+    // Inicializar células de conciliação das linhas restantes
+    for (let i = 2; i < table.rows.length; i++) {
         if (!table.rows[i].cells[colConc]) {
-            const newCell = table.rows[i].insertCell(colConc);
-            newCell.textContent = '';
-            newCell.style.textAlign = 'center';
-        } else {
-            table.rows[i].cells[colConc].textContent = '';
-            table.rows[i].cells[colConc].style.textAlign = 'center';
+            table.rows[i].insertCell(colConc);
         }
-    }
-
-    // Linha 1 como cabeçalho de conciliação
-    if (table.rows.length > 1) {
-        table.rows[1].cells[colConc].textContent = 'Conciliado';
-        table.rows[1].style.display = "";
+        table.rows[i].cells[colConc].textContent = '';
+        table.rows[i].cells[colConc].style.textAlign = 'center';
+        table.rows[i].cells[colConc].classList.add('conc-cell');
     }
 
     const refUsed = new Array(table.rows.length).fill(false);
@@ -150,7 +173,7 @@ conciliaButton.addEventListener('click', () => {
     for (let i = 2; i < table.rows.length; i++) {
         if (refUsed[i]) continue;
         const valRef = originalData[i-1][colRef];
-        if (!valRef) continue;
+        if (valRef === undefined || valRef === null || valRef === '') continue;
 
         for (let j = 2; j < table.rows.length; j++) {
             if (searchUsed[j]) continue;
@@ -165,6 +188,7 @@ conciliaButton.addEventListener('click', () => {
             }
         }
     }
+
     aplicarFiltro(filtroAtual);
 });
 
@@ -179,11 +203,7 @@ document.querySelectorAll('#filtro-conc button[data-filtro]').forEach(btn => {
 function aplicarFiltro(filtro) {
     if (concIdxAtual === null) return;
     const table = document.getElementById('excel-table');
-    for (let i = 1; i < table.rows.length; i++) {
-        if (i === 1) { 
-            table.rows[i].style.display = ""; // cabeçalho sempre visível
-            continue; 
-        }
+    for (let i = 2; i < table.rows.length; i++) { // Começar da linha 2
         const valor = table.rows[i].cells[concIdxAtual].textContent.trim().toLowerCase();
         if (filtro === "todos") table.rows[i].style.display = "";
         else if (filtro === "sim" && valor === "sim") table.rows[i].style.display = "";
@@ -198,16 +218,19 @@ document.getElementById('btn-export').addEventListener('click', () => {
     const dataFiltrada = [];
 
     for (let i = 0; i < table.rows.length; i++) {
-        if (i === 0) continue; // IGNORAR linha de letras das colunas
-        if (i > 1 && table.rows[i].style.display === "none") continue; // respeitar filtro
+        if (i > 1 && table.rows[i].style.display === "none") continue; 
         const tds = table.rows[i].cells;
         const linhaArray = [];
-        for (let j = 0; j < tds.length; j++) linhaArray.push(tds[j].textContent);
+        for (let j = 1; j < tds.length; j++) { // Ignorar coluna 0
+            linhaArray.push(tds[j].textContent);
+        }
         dataFiltrada.push(linhaArray);
     }
 
     const ws = XLSX.utils.aoa_to_sheet(dataFiltrada);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Conciliado');
-    XLSX.writeFile(wb, 'planilha_filtrada.xlsx');
+
+    const suggestedName = originalFileName ? `${originalFileName}_filtrada.xlsx` : 'planilha_filtrada.xlsx';
+    XLSX.writeFile(wb, suggestedName);
 });
