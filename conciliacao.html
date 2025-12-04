@@ -7,7 +7,8 @@
   <link rel="stylesheet" href="css/header.css" />
   <link rel="stylesheet" href="css/menu_lateral.css" />
   <link rel="stylesheet" href="css/conciliacao.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+</head>
 </head>
 <body class="ferramentas-page">
   <header>
@@ -37,48 +38,39 @@
       </ul>
     </aside>
 
-    <main>
-      <section class="conciliador">
-        <h2>Conciliador de Planilhas</h2>
+  <main>
 
-        <!-- Upload do Excel -->
-        <input type="file" id="excelFile" accept=".xlsx, .xls" />
+    <h2>Conciliação de Tabela</h2>
+    <input type="file" id="input-excel" accept=".xlsx, .xls" />
 
-        <div id="colunasSelect" style="display: none; margin-top: 15px;">
-          <!-- Seleção de colunas -->
-          <label for="colunaBase">Coluna Referência:</label>
-          <input type="text" id="colunaBase" size="1" maxlength="3" />
-
-          <label for="colunaAlvo">Coluna Comparada:</label>
-          <input type="text" id="colunaAlvo" size="1" maxlength="3" />
-
-          <label for="colunaConciliacao">Conciliação:</label>
-          <input type="text" id="colunaConciliacao" size="1" maxlength="3" />
-
-          <!-- Botões de ação -->
-          <div style="margin-top: 10px;">
-            <button id="conciliarBtn">Conciliar</button>
-            <button id="baixarBtn" style="display: none;">Baixar</button>
-          </div>
-
-          <!-- 🔍 Filtro Conciliado / Não Conciliado / Todos (botões) -->
-          <div id="filtroBotoes" style="margin-top: 15px;">
-            <strong>Filtrar Conciliação:</strong><br>
-            <button class="filtro-btn ativo" data-filtro="todos" style="margin-right: 5px;">Todos</button>
-            <button class="filtro-btn" data-filtro="sim" style="margin-right: 5px;">Conciliado</button>
-            <button class="filtro-btn" data-filtro="nao">Não Conciliado</button>
-          </div>
+    <div id="controls-container">
+        <div id="format-buttons">
+            <button id="btn-original">Original</button>
+            <button id="btn-data">Data</button>
+            <button id="btn-valor">Valor</button>
         </div>
 
-        <!-- 📌 Área onde serão exibidas as totalizações -->
-        <section id="totaisArea" style="margin-top: 20px; font-weight: bold;"></section>
+        <div id="concilia-section">
+            <label>Coluna referência: <input type="text" id="col-ref" maxlength="2"></label>
+            <label>Coluna procura: <input type="text" id="col-search" maxlength="2"></label>
+            <label>Coluna conciliação: <input type="text" id="col-conc" maxlength="2"></label>
+            <button id="btn-concilia">Conciliar</button>
+        </div>
 
-        <!-- 📊 TABELA RESULTANTE -->
-        <div id="tabelaContainer" style="margin-top: 20px;"></div>
-      </section>
-    </main>
+        <div id="filtro-conc">
+            <span>Filtrar conciliação: </span>
+            <button data-filtro="todos">Todos</button>
+            <button data-filtro="sim">Conciliados</button>
+            <button data-filtro="nao">Não conciliados</button>
+            <button id="btn-export">Exportar Excel</button>
+        </div>
+    </div>
+
+    <div id="tabela-container"></div>
+
+  </main>
+  
   </div>
-
   <!-- JS do Conciliador -->
   <script src="js/conciliacao.js"></script>
 </body>
