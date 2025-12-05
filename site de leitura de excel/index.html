@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Excel com Formatação Controlada</title>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<style>
+    table {
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    table, th, td {
+        border: 1px solid #000;
+        padding: 5px;
+        min-width: 50px;
+        cursor: pointer;
+    }
+    th {
+        background-color: #f0f0f0;
+        text-align: center;
+        cursor: pointer;
+    }
+    button {
+        margin: 5px;
+        padding: 8px 15px;
+        display: none; /* inicialmente escondidos */
+    }
+</style>
+</head>
+<body>
+
+<h2>Excel com Formatação Controlada</h2>
+<input type="file" id="input-excel" accept=".xlsx, .xls" />
+<div id="buttons-container">
+    <button id="btn-original">Original</button>
+    <button id="btn-data">Data</button>
+    <button id="btn-valor">Valor</button>
+</div>
+<div id="tabela-container"></div>
+
+<script>
+let originalData = [];
+let currentRange = null;
+let currentFormat = null; // formatação selecionada
+let formatActive = false; // se a ação de formatação está ativa
+
+const buttons = document.querySelectorAll('#buttons-container button');
+const buttonsContainer = document.getElementById('buttons-container');
+
+// Ler Excel
+document.getElementById('input-excel').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const range = XLSX.utils.decode_range(worksheet['!ref']);
+        currentRange = range;
+
+        originalData = [];
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            const row = [];
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cell_ref = XLSX.utils.encode_cell({ c: C, r: R });
+                const cell = worksheet[cell_ref];
+                row.push(cell ? cell.v : '');
+            }
+            originalData.push(row);
+        }
+
+        renderTable(originalData, currentRange);
+
+        // Mostrar os botões quando a tabela é carregada
+        buttons.forEach(btn => btn.style.display = 'inline-block');
+    };
+    reader.readAsArrayBuffer(file);
+});
+
+// Renderizar tabela
+function renderTable(data, range) {
+    let table = '<table id="excel-table">';
+    // Letras das colunas
+    table += '<tr>';
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+        const colLetter = XLSX.utils.encode_col(C);
+        table += `<th data-col="${C}">${colLetter}</th>`;
+    }
+    table += '</tr>';
+
+    for (let R = 0; R < data.length; R++) {
+        table += '<tr>';
+        for (let C = 0; C < data[R].length; C++) {
+            const cell_value = data[R][C];
+            let align = 'left';
+            if (typeof cell_value === 'number') align = 'right';
+            table += `<td data-row="${R}" data-col="${C}" style="text-align:${align};">${cell_value}</td>`;
+        }
+        table += '</tr>';
+    }
+
+    table += '</table>';
+    document.getElementById('tabela-container').innerHTML = table;
+
+    // Evento de clique nas colunas
+    document.querySelectorAll('#excel-table th').forEach(th => {
+        th.addEventListener('click', () => {
+            if (!formatActive) return;
+            const colIndex = th.getAttribute('data-col');
+            applyFormatToColumn(colIndex, currentFormat);
+        });
+    });
+}
+
+// Aplicar formatação à coluna
+function applyFormatToColumn(colIndex, format) {
+    const table = document.getElementById('excel-table');
+    for (let i = 1; i < table.rows.length; i++) { // pular header
+        const cell = table.rows[i].cells[colIndex];
+        let value = originalData[i-1][colIndex];
+
+        if (format === 'original') {
+            cell.textContent = value;
+            cell.style.textAlign = (typeof value === 'number') ? 'right' : 'left';
+        } else if (format === 'data') {
+            const date = new Date(value);
+            if (!isNaN(date)) {
+                const day = String(date.getDate()).padStart(2,'0');
+                const month = String(date.getMonth()+1).padStart(2,'0');
+                const year = date.getFullYear();
+                cell.textContent = `${day}/${month}/${year}`;
+            } else {
+                cell.textContent = value;
+            }
+            cell.style.textAlign = 'center';
+        } else if (format === 'valor') {
+            if (typeof value === 'number') {
+                cell.textContent = value.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+            } else {
+                cell.textContent = value;
+            }
+            cell.style.textAlign = 'right';
+        }
+    }
+}
+
+// Botões de formatação
+document.getElementById('btn-original').addEventListener('click', () => activateFormat('original'));
+document.getElementById('btn-data').addEventListener('click', () => activateFormat('data'));
+document.getElementById('btn-valor').addEventListener('click', () => activateFormat('valor'));
+
+// Função de ativar formatação
+function activateFormat(formatType) {
+    currentFormat = formatType;
+    formatActive = true;
+}
+
+// Cancelar formatação ao clicar fora da tabela
+document.addEventListener('click', (event) => {
+    const tableContainer = document.getElementById('tabela-container');
+    const clickedInsideTable = tableContainer.contains(event.target);
+    const clickedButton = buttonsContainer.contains(event.target);
+
+    if (!clickedInsideTable && !clickedButton) {
+        formatActive = false; // desativa ação de formatação
+    }
+});
+</script>
+
+</body>
+</html>

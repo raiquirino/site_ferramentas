@@ -1,18 +1,60 @@
-.tabela-conciliada {
-  border-collapse: collapse;
-  width: 100%;
+main table { 
+    border-collapse: collapse; 
+    margin-top: 20px; 
 }
 
-.tabela-conciliada th,
-.tabela-conciliada td {
-  border: 1px solid #ccc;
-  padding: 8px;
+main table, main th, main td { 
+    border: 1px solid #000; 
+    padding: 5px; 
+    min-width: 50px; 
+    cursor: pointer; 
 }
 
-#totaisArea {
-  display: flex;       /* ativa o flex layout */
-  gap: 20px;           /* espaço entre os itens */
-  flex-wrap: wrap;     /* permite quebrar linha se necessário */
-  align-items: center; /* alinha verticalmente os itens no centro */
-  font-weight: bold;   /* mantém o estilo em negrito */
+main th { 
+    background-color: #f0f0f0; 
+    text-align: center; 
+}
+
+main #controls-container { 
+    display: none; 
+    margin-top: 10px; 
+}
+
+main #format-buttons button, 
+main #concilia-section button, 
+main #filtro-conc button { 
+    margin: 3px; 
+    padding: 4px 10px; 
+    font-size: 0.9em; 
+}
+
+main #concilia-section { 
+    margin-top: 10px; 
+}
+
+main #concilia-section input { 
+    width: 40px; 
+    margin-right: 5px; 
+}
+
+/* Estilo botão exportação Excel */
+main #btn-export {
+    background-color: #217346; 
+    color: white; 
+    border: none; 
+    padding: 5px 12px; 
+    font-weight: bold; 
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+main #btn-export:hover {
+    background-color: #1b5c39;
+}
+
+/* ==================== TODAS AS CÉLULAS ==================== */
+/* Essa regra já garante que qualquer célula adicionada siga o estilo */
+main td, main th {
+    font-family: Arial, sans-serif;
+    font-size: 0.9em;
 }
