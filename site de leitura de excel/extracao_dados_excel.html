@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Ler Excel com letras das colunas</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+    <style>
+        table { border-collapse: collapse; margin-bottom: 30px; }
+        td, th { border: 1px solid #000; padding: 4px; }
+        th { background: #eee; font-weight: bold; }
+    </style>
+</head>
+
+<body>
+    <h2>Ler Excel (dados brutos + letras das colunas)</h2>
+
+    <input type="file" id="inputExcel" accept=".xlsx, .xls">
+
+    <div id="output"></div>
+
+    <script>
+        // Converte índice numérico em letra de coluna (0 -> A, 1 -> B...)
+        function columnToLetter(n) {
+            let letters = "";
+            while (n >= 0) {
+                letters = String.fromCharCode((n % 26) + 65) + letters;
+                n = Math.floor(n / 26) - 1;
+            }
+            return letters;
+        }
+
+        document.getElementById("inputExcel").addEventListener("change", function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: "array" });
+
+                let html = "";
+
+                workbook.SheetNames.forEach(sheetName => {
+                    const sheet = workbook.Sheets[sheetName];
+
+                    // Lê tudo como matriz bruta (nada omitido)
+                    const rows = XLSX.utils.sheet_to_json(sheet, {
+                        header: 1,
+                        raw: true,
+                        defval: ""
+                    });
+
+                    const maxCols = Math.max(...rows.map(r => r.length));
+
+                    let table = "<table>";
+
+                    // Linha com letras das colunas
+                    table += "<tr>";
+                    for (let c = 0; c < maxCols; c++) {
+                        table += `<th>${columnToLetter(c)}</th>`;
+                    }
+                    table += "</tr>";
+
+                    // Linhas dos dados
+                    rows.forEach(row => {
+                        table += "<tr>";
+                        for (let c = 0; c < maxCols; c++) {
+                            const cell = row[c] !== undefined ? row[c] : "";
+                            table += `<td>${cell}</td>`;
+                        }
+                        table += "</tr>";
+                    });
+
+                    table += "</table>";
+
+                    // 👉 Removido o título da aba (Plan1, Plan2, etc.)
+                    html += table + "<hr>";
+                });
+
+                document.getElementById("output").innerHTML = html;
+            };
+
+            reader.readAsArrayBuffer(file);
+        });
+    </script>
+
+</body>
+</html>

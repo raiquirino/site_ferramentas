@@ -9,7 +9,7 @@
 table { border-collapse: collapse; margin-bottom: 30px; }
 td, th { border: 1px solid #000; padding: 4px; cursor: pointer; }
 th { background: #eee; font-weight: bold; }
-.selected-row { background-color: #fffa90 !important; }
+.selected-column { background-color: #d0f0d0; }
 
 input[type=text] {
     width: 60px;
@@ -18,25 +18,13 @@ input[type=text] {
     text-transform: uppercase;
 }
 
+#menus {
+    display: none;
+    margin-top: 15px;
+}
+
 #totais {
     margin-top: 10px;
-    font-weight: bold;
-}
-
-button {
-    margin-right: 5px;
-}
-
-#copiado-msg {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    background: #cfc;
-    padding: 10px 15px;
-    border: 1px solid #090;
-    border-radius: 5px;
-    display: none;
-    z-index: 9999;
     font-weight: bold;
 }
 </style>
@@ -46,50 +34,50 @@ button {
 
 <h2>Ler Excel com Conciliação + Filtro + Totalização</h2>
 
-<input type="file" id="inputExcel" accept=".xlsx,.xls"><br><br>
+<input type="file" id="inputExcel" accept=".xlsx,.xls">
+<button id="btnLimpar" style="background:#fdd; font-weight:bold;">Limpar Arquivo</button>
 
-<button id="btnDate">Formato Data</button>
-<button id="btnValue">Formato Valor</button>
-<button id="btnOriginal">Original</button>
-<button id="btnDesativar">Desativar Formato</button>
+<div id="menus">
+    <br>
+    <!-- Botões de Formatação -->
+    <button id="btnDate">Formato Data</button>
+    <button id="btnValue">Formato Valor</button>
+    <button id="btnOriginal">Original</button>
 
-<br><br>
+    <br><br>
 
-<label>Coluna 1:</label>
-<input type="text" id="col1" maxlength="3">
+    <!-- Colunas -->
+    <label>Coluna 1:</label>
+    <input type="text" id="col1" maxlength="3">
 
-<label>Coluna 2:</label>
-<input type="text" id="col2" maxlength="3">
+    <label>Coluna 2:</label>
+    <input type="text" id="col2" maxlength="3">
 
-<label>Resultado:</label>
-<input type="text" id="colR" maxlength="3">
+    <label>Resultado:</label>
+    <input type="text" id="colR" maxlength="3">
 
-<button id="btnConciliar" style="background:#cfc; font-weight:bold;">Conciliar</button>
+    <button id="btnConciliar" style="background:#cfc; font-weight:bold;">Conciliar</button>
 
-<br><br>
+    <br><br>
 
-<button id="btnConciliados" style="background:#d0ffd0;">Conciliados</button>
-<button id="btnNaoConciliados" style="background:#ffd0d0;">Não Conciliados</button>
-<button id="btnTodos" style="background:#d0d0ff;">Todos</button>
+    <!-- Filtros -->
+    <button id="btnConciliados" style="background:#d0ffd0;">Conciliados</button>
+    <button id="btnNaoConciliados" style="background:#ffd0d0;">Não Conciliados</button>
+    <button id="btnTodos" style="background:#d0d0ff;">Todos</button>
 
-<br><br>
+    <button id="btnSalvar" style="background:#ddf; font-weight:bold;">Salvar Tabela</button>
 
-<button id="btnSalvar" style="background:#cfc; font-weight:bold;">Salvar Excel</button>
+    <div id="totais"></div>
+</div>
 
-<br><br>
-<div id="totais"></div>
-
-<br>
 <div id="output"></div>
 
-<div id="copiado-msg">Copiado!</div>
-
 <script>
-
 let currentFormat = null;
+let originalFileName = "";
 
 // -----------------------------
-// Funções utilitárias
+// Funções originais
 // -----------------------------
 function columnToLetter(n) {
     let s = "";
@@ -123,26 +111,20 @@ function formatValue(v) {
     return isNaN(num) ? v : num.toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
-// -----------------------------
-// Botões Formato
-// -----------------------------
 document.getElementById("btnDate").onclick = () => currentFormat = "date";
 document.getElementById("btnValue").onclick = () => currentFormat = "value";
 document.getElementById("btnOriginal").onclick = () => currentFormat = "original";
-document.getElementById("btnDesativar").onclick = () => currentFormat = null;
-
-// Reset input
-document.getElementById("inputExcel").addEventListener("click", function () {
-    this.value = "";
-});
 
 // -----------------------------
-// Leitura Excel
+// LEITURA DO EXCEL
 // -----------------------------
 document.getElementById("inputExcel").addEventListener("change", function (e) {
-    const reader = new FileReader();
     const file = e.target.files[0];
+    if (!file) return;
 
+    originalFileName = file.name.replace(/\.[^/.]+$/, ""); // sem extensão
+
+    const reader = new FileReader();
     reader.onload = function (event) {
         const workbook = XLSX.read(new Uint8Array(event.target.result), { type: "array" });
         let html = "";
@@ -172,8 +154,11 @@ document.getElementById("inputExcel").addEventListener("change", function (e) {
         });
 
         document.getElementById("output").innerHTML = html;
+        document.getElementById("menus").style.display = "block";
 
-        // Removida a marcação verde ao clicar na coluna para formatar
+        // Aplicar formatação automática de valor nas colunas 1 e 2
+        aplicarFormatoValorAutomatico();
+
         document.querySelectorAll("td, th").forEach(cell => {
             cell.addEventListener("click", function () {
                 if (!currentFormat) return;
@@ -186,6 +171,8 @@ document.getElementById("inputExcel").addEventListener("change", function (e) {
                     else if (currentFormat === "value") td.textContent = formatValue(original);
                     else td.textContent = original;
                 });
+                table.querySelectorAll("td, th").forEach(x => x.classList.remove("selected-column"));
+                table.querySelectorAll(`[data-col="${col}"]`).forEach(x => x.classList.add("selected-column"));
             });
         });
 
@@ -196,8 +183,19 @@ document.getElementById("inputExcel").addEventListener("change", function (e) {
 });
 
 // -----------------------------
-// Conciliação
+// BOTÃO LIMPAR ARQUIVO
 // -----------------------------
+document.getElementById("btnLimpar").onclick = () => {
+    document.getElementById("output").innerHTML = "";
+    document.getElementById("totais").innerHTML = "";
+    document.getElementById("menus").style.display = "none";
+    document.getElementById("inputExcel").value = "";
+    originalFileName = "";
+};
+
+// --------------------------------------------------------------
+// CONCILIAÇÃO
+// --------------------------------------------------------------
 document.getElementById("btnConciliar").addEventListener("click", () => {
     const colA = letterToColIndex(document.getElementById("col1").value);
     const colB = letterToColIndex(document.getElementById("col2").value);
@@ -233,28 +231,25 @@ document.getElementById("btnConciliar").addEventListener("click", () => {
                     usadosB.add(r2);
                     const res1 = rows[r1].querySelector(`td[data-col="${colR}"]`);
                     const res2 = rows[r2].querySelector(`td[data-col="${colR}"]`);
-                    res1.textContent = "Sim"; res1.setAttribute("data-original","Sim");
-                    res2.textContent = "Sim"; res2.setAttribute("data-original","Sim");
+                    res1.textContent = "Sim";
+                    res1.setAttribute("data-original","Sim");
+                    res2.textContent = "Sim";
+                    res2.setAttribute("data-original","Sim");
                     break;
                 }
             }
         }
-
-        [colA, colB].forEach(col => {
-            const tds = table.querySelectorAll(`td[data-col="${col}"]`);
-            tds.forEach(td => {
-                const original = td.getAttribute("data-original");
-                td.textContent = formatValue(original);
-            });
-        });
     });
+
+    // Aplicar formatação de valor automaticamente nas colunas 1 e 2
+    aplicarFormatoValorAutomatico();
 
     atualizarTotais();
 });
 
-// -----------------------------
-// Filtros
-// -----------------------------
+// --------------------------------------------------------------
+// FILTRO
+// --------------------------------------------------------------
 function filtrarTabela(tipo) {
     const colR = letterToColIndex(document.getElementById("colR").value);
     if (colR < 0) return;
@@ -263,6 +258,7 @@ function filtrarTabela(tipo) {
         const linhas = table.querySelectorAll("tr");
         for (let i = 2; i < linhas.length; i++) {
             const cel = linhas[i].querySelector(`td[data-col="${colR}"]`);
+            if (!cel) continue;
             const valor = cel.textContent.trim().toLowerCase();
             if (tipo === "conciliados") linhas[i].style.display = (valor === "sim") ? "" : "none";
             else if (tipo === "nao") linhas[i].style.display = (valor === "") ? "" : "none";
@@ -277,9 +273,9 @@ document.getElementById("btnConciliados").onclick = () => filtrarTabela("concili
 document.getElementById("btnNaoConciliados").onclick = () => filtrarTabela("nao");
 document.getElementById("btnTodos").onclick = () => filtrarTabela("todos");
 
-// -----------------------------
-// Totalização
-// -----------------------------
+// --------------------------------------------------------------
+// TOTALIZAÇÃO
+// --------------------------------------------------------------
 function atualizarTotais() {
     const colA = letterToColIndex(document.getElementById("col1").value);
     const colB = letterToColIndex(document.getElementById("col2").value);
@@ -291,19 +287,18 @@ function atualizarTotais() {
         const linhas = table.querySelectorAll("tr");
         for (let i = 2; i < linhas.length; i++) {
             if (linhas[i].style.display === "none") continue;
-
             const celA = linhas[i].querySelector(`td[data-col="${colA}"]`);
             const celB = linhas[i].querySelector(`td[data-col="${colB}"]`);
 
             if (celA) {
                 let txt = celA.textContent.trim().replace(/\./g,"").replace(",",".");
-
-                const n = parseFloat(txt); if (!isNaN(n)) totalA += n;
+                const n = parseFloat(txt);
+                if (!isNaN(n)) totalA += n;
             }
             if (celB) {
                 let txt = celB.textContent.trim().replace(/\./g,"").replace(",",".");
-
-                const n = parseFloat(txt); if (!isNaN(n)) totalB += n;
+                const n = parseFloat(txt);
+                if (!isNaN(n)) totalB += n;
             }
         }
     });
@@ -312,86 +307,43 @@ function atualizarTotais() {
         `Total Coluna ${letraB}: ${totalB.toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2})} &nbsp;&nbsp; | &nbsp;&nbsp; Total Coluna ${letraA}: ${totalA.toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2})}`;
 }
 
-// -----------------------------
-// Salvar Excel (SEM LINHA 0)
-// -----------------------------
-document.getElementById("btnSalvar").addEventListener("click", () => {
-    const tables = document.querySelectorAll("#output table");
-    if (tables.length === 0) return;
+// --------------------------------------------------------------
+// SALVAR TABELA FILTRADA A PARTIR DA PRIMEIRA LINHA
+// --------------------------------------------------------------
+document.getElementById("btnSalvar").onclick = () => {
+    if (!originalFileName) return;
 
-    tables.forEach((table) => {
-        const workbook = XLSX.utils.book_new();
-        let data = [];
-        const linhas = table.querySelectorAll("tr");
-
-        for (let i = 1; i < linhas.length; i++) {
-            if (i > 1 && linhas[i].style.display === "none") continue;
-
-            const cells = linhas[i].querySelectorAll("th, td");
-            let row = [];
-
-            cells.forEach(cell => {
-                let val = cell.textContent;
-                const colIndex = parseInt(cell.getAttribute("data-col"));
-
-                const col1Index = letterToColIndex(document.getElementById("col1").value);
-                const col2Index = letterToColIndex(document.getElementById("col2").value);
-
-                if (i > 1 && (colIndex === col1Index || colIndex === col2Index)) {
-                    val = val.replace(/\./g, "").replace(",", ".");
-                    val = parseFloat(val);
-                    if (isNaN(val)) val = "";
-                }
-
-                row.push(val);
-            });
-
-            data.push(row);
-        }
-
-        const ws = XLSX.utils.aoa_to_sheet(data);
-        XLSX.utils.book_append_sheet(workbook, ws, "Sheet1");
-
-        let nomeArquivo = document.getElementById("inputExcel").files[0]?.name || "planilha.xlsx";
-        XLSX.writeFile(workbook, nomeArquivo);
+    const ws_data = [];
+    document.querySelectorAll("#output table").forEach(table => {
+        const rows = table.querySelectorAll("tr");
+        rows.forEach(r => {
+            if (r.style.display === "none") return; // ignora linhas filtradas
+            const rowData = [];
+            r.querySelectorAll("th, td").forEach(cell => rowData.push(cell.textContent));
+            ws_data.push(rowData);
+        });
     });
-});
 
-// -----------------------------
-// Marcar/desmarcar linha inteira ao clicar (toggle)
-// -----------------------------
-document.querySelector("#output").addEventListener("click", function(e) {
-    const target = e.target;
-    if (target.tagName === "TD") {
-        const row = target.parentElement;
-        row.classList.toggle("selected-row");
-    }
-});
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(ws_data); // garante que começa da linha 1
+    XLSX.utils.book_append_sheet(wb, ws, "Planilha");
 
-// -----------------------------
-// Copiar célula ao dar duplo clique e marcar linha
-// -----------------------------
-document.querySelector("#output").addEventListener("dblclick", function(e) {
-    const target = e.target;
-    if (target.tagName === "TD") {
-        // Copiar célula
-        const texto = target.textContent.trim();
-        if (texto) {
-            navigator.clipboard.writeText(texto).then(() => {
-                const msg = document.getElementById("copiado-msg");
-                if (msg) {
-                    msg.textContent = `Copiado: ${texto}`;
-                    msg.style.display = "block";
-                    setTimeout(() => msg.style.display = "none", 1500);
-                }
-            }).catch(err => console.error("Erro ao copiar:", err));
-        }
-        // Marcar a linha inteira
-        const row = target.parentElement;
-        row.classList.toggle("selected-row");
-    }
-});
+    XLSX.writeFile(wb, originalFileName + "_filtrada.xlsx");
+};
 
+// --------------------------------------------------------------
+// FORMATAÇÃO AUTOMÁTICA DE VALOR NAS COLUNAS 1 E 2
+// --------------------------------------------------------------
+function aplicarFormatoValorAutomatico() {
+    const colA = letterToColIndex(document.getElementById("col1").value);
+    const colB = letterToColIndex(document.getElementById("col2").value);
+    if (colA < 0 && colB < 0) return;
+
+    document.querySelectorAll("#output table").forEach(table => {
+        if (colA >= 0) table.querySelectorAll(`td[data-col="${colA}"]`).forEach(td => td.textContent = formatValue(td.textContent));
+        if (colB >= 0) table.querySelectorAll(`td[data-col="${colB}"]`).forEach(td => td.textContent = formatValue(td.textContent));
+    });
+}
 </script>
 
 </body>

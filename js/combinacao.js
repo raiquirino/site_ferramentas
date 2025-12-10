@@ -1,8 +1,9 @@
 let dadosExcel = [];
-let formatosColuna = {}; // índice da coluna -> tipo
+let formatosColuna = {};
 let formatoSelecionado = "original"; 
 let colCombIndex = null; 
 let filtroAtual = "todos"; 
+let nomeArquivoOriginal = "";
 
 function setFormato(tipo){
     formatoSelecionado = tipo;
@@ -14,17 +15,13 @@ function setFiltro(valor){
 }
 
 function parseNumero(valor){
-    if(!valor) return NaN;
+    if(valor == null) return NaN;
+    if(typeof valor === "number") return valor;
     valor = valor.toString().trim();
+    if(valor === "") return NaN;
     if(valor.match(/^\d{1,3}(\.\d{3})*,\d+$/)) return parseFloat(valor.replace(/\./g,'').replace(',', '.'));
     if(valor.match(/^\d{1,3}(,\d{3})*\.\d+$/)) return parseFloat(valor.replace(/,/g,''));
     return parseFloat(valor.replace(',', '.'));
-}
-
-function formatarDataPTBR(valor){
-    const d = new Date(valor);
-    if(!isNaN(d)) return d.toLocaleDateString("pt-BR");
-    return valor;
 }
 
 function numeroParaColuna(n){
@@ -45,37 +42,23 @@ function colunaParaNumero(letra){
     return col-1;
 }
 
-document.getElementById("inputExcel").addEventListener("change", function(e){
-    const arquivo = e.target.files[0];
-    const reader = new FileReader();
-
-    reader.onload = function(evt){
-        const dados = evt.target.result;
-        const workbook = XLSX.read(dados, {type: "binary"});
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        dadosExcel = XLSX.utils.sheet_to_json(sheet, {header: 1, raw: false});
-
-        for(let i=1;i<dadosExcel.length;i++){
-            for(let j=0;j<dadosExcel[i].length;j++){
-                const v = dadosExcel[i][j];
-                if(typeof v === "string"){
-                    const num = parseNumero(v);
-                    if(!isNaN(num)) dadosExcel[i][j] = num;
-                }
-            }
-        }
-        exibirTabelaExcel(dadosExcel);
-    };
-    reader.readAsBinaryString(arquivo);
-});
+function formatarDataPTBR(valor){
+    if(!(valor instanceof Date)) return valor;
+    const dia = String(valor.getDate()).padStart(2,'0');
+    const mes = String(valor.getMonth() + 1).padStart(2,'0');
+    const ano = valor.getFullYear();
+    return `${dia}/${mes}/${ano}`;
+}
 
 function formatarValor(valor, colIndex){
     const tipo = formatosColuna[colIndex] || "original";
     if(tipo === "numero"){
-        const n = (typeof valor === "number") ? valor : parseNumero(valor);
+        const n = parseNumero(valor);
         return isNaN(n) ? valor : n.toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2});
     }
-    if(tipo === "data") return formatarDataPTBR(valor);
+    if(tipo === "data"){
+        return formatarDataPTBR(valor);
+    }
     return valor;
 }
 
@@ -85,9 +68,8 @@ function exibirTabelaExcel(dados){
         return;
     }
 
-    const filtro = filtroAtual;
     const colunas = dados[0].length;
-    let html = "<table><thead><tr>";
+    let html = "<table border='1'><thead><tr>";
 
     for(let c=0; c<colunas; c++){
         html += `<th class='col-header' data-col-index='${c}'>${numeroParaColuna(c)}</th>`;
@@ -99,8 +81,8 @@ function exibirTabelaExcel(dados){
             html += "<tr>";
         } else if(colCombIndex !== null){
             const valComb = (dados[i][colCombIndex] || "").toString().toLowerCase();
-            if(filtro==="sim" && valComb !== "sim") continue;
-            if(filtro==="nao" && valComb === "sim") continue;
+            if(filtroAtual==="sim" && valComb !== "sim") continue;
+            if(filtroAtual==="nao" && valComb === "sim") continue;
             html += "<tr>";
         } else {
             html += "<tr>";
@@ -125,6 +107,37 @@ function exibirTabelaExcel(dados){
         });
     });
 }
+
+document.getElementById("inputExcel").addEventListener("change", function(e){
+    const arquivo = e.target.files[0];
+    if(!arquivo) return;
+    nomeArquivoOriginal = arquivo.name.replace(/\.xlsx$/i,''); // salva o nome sem extensão
+    const reader = new FileReader();
+
+    reader.onload = function(evt){
+        const dados = evt.target.result;
+        const workbook = XLSX.read(dados, {type: "binary"});
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        dadosExcel = XLSX.utils.sheet_to_json(sheet, {header: 1, raw: true});
+
+        // Corrigir datas e números
+        for(let i=1;i<dadosExcel.length;i++){
+            const valData = dadosExcel[i][0];
+            if(typeof valData === "number"){ 
+                const d = XLSX.SSF.parse_date_code(valData);
+                if(d) dadosExcel[i][0] = new Date(d.y, d.m-1, d.d);
+            }
+            const valDebito = dadosExcel[i][3];
+            if(typeof valDebito === "string"){ 
+                const num = parseNumero(valDebito);
+                if(!isNaN(num)) dadosExcel[i][3] = num;
+            }
+        }
+
+        exibirTabelaExcel(dadosExcel);
+    };
+    reader.readAsBinaryString(arquivo);
+});
 
 document.getElementById("conciliar").addEventListener("click", function(){
     const valorAlvo = parseNumero(document.getElementById("valorAlvo").value);
@@ -184,7 +197,6 @@ document.getElementById("salvarExcel").addEventListener("click", function(){
         return;
     }
 
-    const colunas = dadosExcel[0].length;
     const exportData = [];
     exportData.push(dadosExcel[0]);
 
@@ -201,5 +213,5 @@ document.getElementById("salvarExcel").addEventListener("click", function(){
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Filtrado");
 
-    XLSX.writeFile(wb, "Excel_Filtrado.xlsx");
+    XLSX.writeFile(wb, `${nomeArquivoOriginal}_Filtrado.xlsx`);
 });

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Ler Excel com formatação de colunas</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+    <style>
+        table { border-collapse: collapse; margin-bottom: 30px; }
+        td, th { border: 1px solid #000; padding: 4px; cursor: pointer; }
+        th { background: #eee; font-weight: bold; }
+        button { margin-right: 10px; margin-bottom: 10px; }
+        .selected-column { background-color: #d0f0d0; }
+    </style>
+</head>
+
+<body>
+    <h2>Ler Excel (dados brutos + letras das colunas)</h2>
+
+    <input type="file" id="inputExcel" accept=".xlsx, .xls"><br><br>
+
+    <!-- Botões de formatação -->
+    <button id="btnDate">Formato Data (dd/mm/aaaa)</button>
+    <button id="btnValue">Formato Valor</button>
+    <button id="btnOriginal">Original</button>
+
+    <div id="output"></div>
+
+    <script>
+        let currentFormat = null; // null | "date" | "value" | "original"
+
+        function columnToLetter(n) {
+            let letters = "";
+            while (n >= 0) {
+                letters = String.fromCharCode((n % 26) + 65) + letters;
+                n = Math.floor(n / 26) - 1;
+            }
+            return letters;
+        }
+
+        // Converte valores do Excel para dd/mm/aaaa
+        function excelDateToDDMMYYYY(value) {
+            // Verifica se é número plausível de data do Excel
+            if (!isNaN(value) && value > 0 && value < 60000) {
+                const excelEpoch = new Date(Date.UTC(1899, 11, 30)); // 30/12/1899
+                const date = new Date(excelEpoch.getTime() + value * 86400000);
+                const day = String(date.getUTCDate()).padStart(2, "0");
+                const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+                const year = date.getUTCFullYear();
+                return `${day}/${month}/${year}`;
+            }
+
+            // Se já for string que representa data
+            const parsed = new Date(value);
+            if (!isNaN(parsed.getTime())) {
+                const day = String(parsed.getDate()).padStart(2, "0");
+                const month = String(parsed.getMonth() + 1).padStart(2, "0");
+                const year = parsed.getFullYear();
+                return `${day}/${month}/${year}`;
+            }
+
+            // Não é data
+            return value;
+        }
+
+        function formatValue(value) {
+            const num = parseFloat(value);
+            if (!isNaN(num)) {
+                return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+            return value;
+        }
+
+        // Botões
+        document.getElementById("btnDate").addEventListener("click", () => currentFormat = "date");
+        document.getElementById("btnValue").addEventListener("click", () => currentFormat = "value");
+        document.getElementById("btnOriginal").addEventListener("click", () => currentFormat = "original");
+
+        document.getElementById("inputExcel").addEventListener("change", function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: "array" });
+
+                let html = "";
+
+                workbook.SheetNames.forEach(sheetName => {
+                    const sheet = workbook.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "" });
+                    const maxCols = Math.max(...rows.map(r => r.length));
+
+                    let table = "<table>";
+
+                    // Cabeçalho com letras
+                    table += "<tr>";
+                    for (let c = 0; c < maxCols; c++) {
+                        table += `<th data-col="${c}">${columnToLetter(c)}</th>`;
+                    }
+                    table += "</tr>";
+
+                    // Linhas
+                    rows.forEach(row => {
+                        table += "<tr>";
+                        for (let c = 0; c < maxCols; c++) {
+                            const cell = row[c] !== undefined ? row[c] : "";
+                            table += `<td data-col="${c}" data-original="${cell}">${cell}</td>`;
+                        }
+                        table += "</tr>";
+                    });
+
+                    table += "</table>";
+                    html += table + "<hr>";
+                });
+
+                document.getElementById("output").innerHTML = html;
+
+                // Clique nas colunas
+                document.querySelectorAll("td, th").forEach(cell => {
+                    cell.addEventListener("click", function () {
+                        if (!currentFormat) return;
+                        const colIndex = parseInt(this.getAttribute("data-col"));
+                        const table = this.closest("table");
+                        const cells = table.querySelectorAll(`td[data-col="${colIndex}"]`);
+
+                        cells.forEach(td => {
+                            const original = td.getAttribute("data-original");
+                            if (currentFormat === "date") td.textContent = excelDateToDDMMYYYY(original);
+                            if (currentFormat === "value") td.textContent = formatValue(original);
+                            if (currentFormat === "original") td.textContent = original;
+                        });
+
+                        // Destaque
+                        table.querySelectorAll("td, th").forEach(td => td.classList.remove("selected-column"));
+                        table.querySelectorAll(`[data-col="${colIndex}"]`).forEach(td => td.classList.add("selected-column"));
+                    });
+                });
+            };
+
+            reader.readAsArrayBuffer(file);
+        });
+    </script>
+</body>
+</html>
