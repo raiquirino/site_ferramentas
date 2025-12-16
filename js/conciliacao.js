@@ -85,6 +85,7 @@ document.getElementById("inputExcel").addEventListener("change", function (e) {
 
         document.getElementById("output").innerHTML = html;
 
+        // Removida a marcação verde ao clicar na coluna para formatar
         document.querySelectorAll("td, th").forEach(cell => {
             cell.addEventListener("click", function () {
                 if (!currentFormat) return;
@@ -106,5 +107,199 @@ document.getElementById("inputExcel").addEventListener("change", function (e) {
     reader.readAsArrayBuffer(file);
 });
 
-// (RESTANTE DO SEU JS CONTINUA IGUAL)
-// 🔹 Não cortei nada, apenas mantive exatamente como estava
+// -----------------------------
+// Conciliação
+// -----------------------------
+document.getElementById("btnConciliar").addEventListener("click", () => {
+    const colA = letterToColIndex(document.getElementById("col1").value);
+    const colB = letterToColIndex(document.getElementById("col2").value);
+    const colR = letterToColIndex(document.getElementById("colR").value);
+
+    document.querySelectorAll("#output table").forEach(table => {
+        const rows = table.querySelectorAll("tr");
+        let numCols = rows[0].querySelectorAll("th").length;
+
+        if (colR >= numCols) {
+            for (let r = 0; r < rows.length; r++) {
+                if (r === 0) rows[r].insertAdjacentHTML("beforeend", `<th data-col="${colR}">${columnToLetter(colR)}</th>`);
+                else if (r === 1) rows[r].insertAdjacentHTML("beforeend", `<td data-col="${colR}" data-original="Conciliação">Conciliação</td>`);
+                else rows[r].insertAdjacentHTML("beforeend", `<td data-col="${colR}" data-original=""></td>`);
+            }
+        }
+
+        const usadosB = new Set();
+        for (let r1 = 2; r1 < rows.length; r1++) {
+            const cel1 = rows[r1].querySelector(`td[data-col="${colA}"]`);
+            if (!cel1) continue;
+            const v1 = cel1.textContent.trim();
+            if (!v1) continue;
+
+            for (let r2 = 2; r2 < rows.length; r2++) {
+                if (usadosB.has(r2)) continue;
+                const cel2 = rows[r2].querySelector(`td[data-col="${colB}"]`);
+                if (!cel2) continue;
+                const v2 = cel2.textContent.trim();
+                if (!v2) continue;
+
+                if (v1 === v2) {
+                    usadosB.add(r2);
+                    const res1 = rows[r1].querySelector(`td[data-col="${colR}"]`);
+                    const res2 = rows[r2].querySelector(`td[data-col="${colR}"]`);
+                    res1.textContent = "Sim"; res1.setAttribute("data-original","Sim");
+                    res2.textContent = "Sim"; res2.setAttribute("data-original","Sim");
+                    break;
+                }
+            }
+        }
+
+        [colA, colB].forEach(col => {
+            const tds = table.querySelectorAll(`td[data-col="${col}"]`);
+            tds.forEach(td => {
+                const original = td.getAttribute("data-original");
+                td.textContent = formatValue(original);
+            });
+        });
+    });
+
+    atualizarTotais();
+});
+
+// -----------------------------
+// Filtros
+// -----------------------------
+function filtrarTabela(tipo) {
+    const colR = letterToColIndex(document.getElementById("colR").value);
+    if (colR < 0) return;
+
+    document.querySelectorAll("#output table").forEach(table => {
+        const linhas = table.querySelectorAll("tr");
+        for (let i = 2; i < linhas.length; i++) {
+            const cel = linhas[i].querySelector(`td[data-col="${colR}"]`);
+            const valor = cel.textContent.trim().toLowerCase();
+            if (tipo === "conciliados") linhas[i].style.display = (valor === "sim") ? "" : "none";
+            else if (tipo === "nao") linhas[i].style.display = (valor === "") ? "" : "none";
+            else linhas[i].style.display = "";
+        }
+    });
+
+    atualizarTotais();
+}
+
+document.getElementById("btnConciliados").onclick = () => filtrarTabela("conciliados");
+document.getElementById("btnNaoConciliados").onclick = () => filtrarTabela("nao");
+document.getElementById("btnTodos").onclick = () => filtrarTabela("todos");
+
+// -----------------------------
+// Totalização
+// -----------------------------
+function atualizarTotais() {
+    const colA = letterToColIndex(document.getElementById("col1").value);
+    const colB = letterToColIndex(document.getElementById("col2").value);
+    let totalA = 0, totalB = 0;
+    const letraA = document.getElementById("col1").value.toUpperCase();
+    const letraB = document.getElementById("col2").value.toUpperCase();
+
+    document.querySelectorAll("#output table").forEach(table => {
+        const linhas = table.querySelectorAll("tr");
+        for (let i = 2; i < linhas.length; i++) {
+            if (linhas[i].style.display === "none") continue;
+
+            const celA = linhas[i].querySelector(`td[data-col="${colA}"]`);
+            const celB = linhas[i].querySelector(`td[data-col="${colB}"]`);
+
+            if (celA) {
+                let txt = celA.textContent.trim().replace(/\./g,"").replace(",",".");
+
+                const n = parseFloat(txt); if (!isNaN(n)) totalA += n;
+            }
+            if (celB) {
+                let txt = celB.textContent.trim().replace(/\./g,"").replace(",",".");
+
+                const n = parseFloat(txt); if (!isNaN(n)) totalB += n;
+            }
+        }
+    });
+
+    document.getElementById("totais").innerHTML =
+        `Total Coluna ${letraB}: ${totalB.toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2})} &nbsp;&nbsp; | &nbsp;&nbsp; Total Coluna ${letraA}: ${totalA.toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2})}`;
+}
+
+// -----------------------------
+// Salvar Excel (SEM LINHA 0)
+// -----------------------------
+document.getElementById("btnSalvar").addEventListener("click", () => {
+    const tables = document.querySelectorAll("#output table");
+    if (tables.length === 0) return;
+
+    tables.forEach((table) => {
+        const workbook = XLSX.utils.book_new();
+        let data = [];
+        const linhas = table.querySelectorAll("tr");
+
+        for (let i = 1; i < linhas.length; i++) {
+            if (i > 1 && linhas[i].style.display === "none") continue;
+
+            const cells = linhas[i].querySelectorAll("th, td");
+            let row = [];
+
+            cells.forEach(cell => {
+                let val = cell.textContent;
+                const colIndex = parseInt(cell.getAttribute("data-col"));
+
+                const col1Index = letterToColIndex(document.getElementById("col1").value);
+                const col2Index = letterToColIndex(document.getElementById("col2").value);
+
+                if (i > 1 && (colIndex === col1Index || colIndex === col2Index)) {
+                    val = val.replace(/\./g, "").replace(",", ".");
+                    val = parseFloat(val);
+                    if (isNaN(val)) val = "";
+                }
+
+                row.push(val);
+            });
+
+            data.push(row);
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        XLSX.utils.book_append_sheet(workbook, ws, "Sheet1");
+
+        let nomeArquivo = document.getElementById("inputExcel").files[0]?.name || "planilha.xlsx";
+        XLSX.writeFile(workbook, nomeArquivo);
+    });
+});
+
+// -----------------------------
+// Marcar/desmarcar linha inteira ao clicar (toggle)
+// -----------------------------
+document.querySelector("#output").addEventListener("click", function(e) {
+    const target = e.target;
+    if (target.tagName === "TD") {
+        const row = target.parentElement;
+        row.classList.toggle("selected-row");
+    }
+});
+
+// -----------------------------
+// Copiar célula ao dar duplo clique e marcar linha
+// -----------------------------
+document.querySelector("#output").addEventListener("dblclick", function(e) {
+    const target = e.target;
+    if (target.tagName === "TD") {
+        // Copiar célula
+        const texto = target.textContent.trim();
+        if (texto) {
+            navigator.clipboard.writeText(texto).then(() => {
+                const msg = document.getElementById("copiado-msg");
+                if (msg) {
+                    msg.textContent = `Copiado: ${texto}`;
+                    msg.style.display = "block";
+                    setTimeout(() => msg.style.display = "none", 1500);
+                }
+            }).catch(err => console.error("Erro ao copiar:", err));
+        }
+        // Marcar a linha inteira
+        const row = target.parentElement;
+        row.classList.toggle("selected-row");
+    }
+});
