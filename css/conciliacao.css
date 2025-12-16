@@ -1,60 +1,67 @@
-main table { 
-    border-collapse: collapse; 
-    margin-top: 20px; 
+main table {
+    border-collapse: collapse;
+    margin-bottom: 30px;
 }
 
-main table, main th, main td { 
-    border: 1px solid #000; 
-    padding: 5px; 
-    min-width: 50px; 
-    cursor: pointer; 
-}
-
-main th { 
-    background-color: #f0f0f0; 
-    text-align: center; 
-}
-
-main #controls-container { 
-    display: none; 
-    margin-top: 10px; 
-}
-
-main #format-buttons button, 
-main #concilia-section button, 
-main #filtro-conc button { 
-    margin: 3px; 
-    padding: 4px 10px; 
-    font-size: 0.9em; 
-}
-
-main #concilia-section { 
-    margin-top: 10px; 
-}
-
-main #concilia-section input { 
-    width: 40px; 
-    margin-right: 5px; 
-}
-
-/* Estilo botão exportação Excel */
-main #btn-export {
-    background-color: #217346; 
-    color: white; 
-    border: none; 
-    padding: 5px 12px; 
-    font-weight: bold; 
+main td,
+main th {
+    border: 1px solid #000;
+    padding: 4px;
     cursor: pointer;
-    border-radius: 3px;
 }
 
-main #btn-export:hover {
-    background-color: #1b5c39;
+main th {
+    background: #eee;
+    font-weight: bold;
 }
 
-/* ==================== TODAS AS CÉLULAS ==================== */
-/* Essa regra já garante que qualquer célula adicionada siga o estilo */
-main td, main th {
-    font-family: Arial, sans-serif;
-    font-size: 0.9em;
+main .selected-row {
+    background-color: #fffa90 !important;
+}
+
+main input[type="text"] {
+    width: 60px;
+    padding: 5px;
+    margin-right: 10px;
+    text-transform: uppercase;
+}
+
+main #totais {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+main button {
+    margin-right: 5px;
+}
+
+main #btnConciliar,
+main #btnSalvar {
+    background: #cfc;
+    font-weight: bold;
+}
+
+main #btnConciliados {
+    background: #d0ffd0;
+}
+
+main #btnNaoConciliados {
+    background: #ffd0d0;
+}
+
+main #btnTodos {
+    background: #d0d0ff;
+}
+
+main #copiado-msg {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #cfc;
+    padding: 10px 15px;
+    border: 1px solid #090;
+    border-radius: 5px;
+    display: none;
+    z-index: 9999;
+    font-weight: bold;
 }
