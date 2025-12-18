@@ -269,24 +269,33 @@ document.getElementById("btnSalvar").addEventListener("click", () => {
     });
 });
 
+
 // -----------------------------
-// Marcar/desmarcar linha inteira ao clicar (toggle)
+// Marcar/desmarcar linha inteira SOMENTE com CTRL + clique
 // -----------------------------
-document.querySelector("#output").addEventListener("click", function(e) {
+document.querySelector("#output").addEventListener("click", function (e) {
+    if (!e.ctrlKey) return; // BLOQUEIA clique normal
+
     const target = e.target;
     if (target.tagName === "TD") {
+        e.preventDefault();
+        e.stopPropagation();
+
         const row = target.parentElement;
         row.classList.toggle("selected-row");
     }
 });
 
+
 // -----------------------------
-// Copiar célula ao dar duplo clique e marcar linha
+// Copiar célula com duplo clique (NÃO marca linha)
 // -----------------------------
-document.querySelector("#output").addEventListener("dblclick", function(e) {
+document.querySelector("#output").addEventListener("dblclick", function (e) {
     const target = e.target;
     if (target.tagName === "TD") {
-        // Copiar célula
+        e.preventDefault();
+        e.stopPropagation();
+
         const texto = target.textContent.trim();
         if (texto) {
             navigator.clipboard.writeText(texto).then(() => {
@@ -296,10 +305,7 @@ document.querySelector("#output").addEventListener("dblclick", function(e) {
                     msg.style.display = "block";
                     setTimeout(() => msg.style.display = "none", 1500);
                 }
-            }).catch(err => console.error("Erro ao copiar:", err));
+            });
         }
-        // Marcar a linha inteira
-        const row = target.parentElement;
-        row.classList.toggle("selected-row");
     }
 });
