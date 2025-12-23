@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Ler Excel com formatação</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+    <style>
+        table { border-collapse: collapse; margin-bottom: 30px; }
+        td, th { border: 1px solid #000; padding: 4px; cursor: pointer; }
+        th { font-weight: bold; }
+
+        button { margin-right: 6px; margin-bottom: 10px; }
+
+        .selected-row { background-color: #fff3a0; }
+        .hidden-row { display: none !important; }
+
+        #toast {
+            position: fixed;
+            bottom:20px;
+            right:20px;
+            background:#333;
+            color:#fff;
+            padding:6px 12px;
+            border-radius:4px;
+            font-size:13px;
+            opacity:0;
+            transition: opacity 0.3s;
+            pointer-events:none;
+        }
+        #toast.show { opacity:0.9; }
+
+        .format-btn.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .excel-col-letters {
+            background-color: #bdd7ee;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .excel-header {
+            background-color: #bdd7ee;
+            font-weight: bold;
+        }
+
+        #btnSaveExcel {
+            background-color: #217346;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #btnSaveExcel:hover {
+            background-color: #1a5c38;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Ler Excel (dados brutos + letras das colunas)</h2>
+
+<input type="file" id="inputExcel" accept=".xlsx, .xls"><br><br>
+
+<div style="margin-bottom: 15px;">
+    <button id="btnDate" class="format-btn">Formato Data</button>
+    <button id="btnValue" class="format-btn">Formato Valor</button>
+    <button id="btnOriginal" class="format-btn">Original</button>
+</div>
+
+<div style="margin-bottom: 15px;">
+    <button id="btnFilterSelected">Selecionadas</button>
+    <button id="btnFilterNotSelected">Não Selecionadas</button>
+    <button id="btnFilterAll">Todas</button>
+    <button id="btnClearSelection">Limpar Seleções</button>
+</div>
+
+<div style="margin-bottom: 20px;">
+    <button id="btnSaveExcel">Salvar Excel</button>
+</div>
+
+<div id="output"></div>
+<div id="toast">Copiado</div>
+
+<script>
+let currentFormat = null;
+let originalFileName = "planilha.xlsx";
+
+// >>> NOVO: guarda formato por coluna
+let columnFormats = {};
+
+function showToast() {
+    const toast = document.getElementById("toast");
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 1200);
+}
+
+function columnToLetter(n) {
+    let s = "";
+    while (n >= 0) {
+        s = String.fromCharCode((n % 26) + 65) + s;
+        n = Math.floor(n / 26) - 1;
+    }
+    return s;
+}
+
+function excelDateToDDMMYYYY(v) {
+    if (!isNaN(v) && v > 0 && v < 60000) {
+        const b = new Date(Date.UTC(1899, 11, 30));
+        const d = new Date(b.getTime() + v * 86400000);
+        return `${String(d.getUTCDate()).padStart(2,"0")}/${String(d.getUTCMonth()+1).padStart(2,"0")}/${d.getUTCFullYear()}`;
+    }
+    return v;
+}
+
+function formatValue(v) {
+    const n = parseFloat(v);
+    return isNaN(n) ? v : n.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+}
+
+const btnDate = document.getElementById("btnDate");
+const btnValue = document.getElementById("btnValue");
+const btnOriginal = document.getElementById("btnOriginal");
+const formatButtons = [btnDate, btnValue, btnOriginal];
+
+function setFormat(format) {
+    if (currentFormat === format) {
+        currentFormat = null;
+        formatButtons.forEach(b => b.classList.remove("active"));
+    } else {
+        currentFormat = format;
+        formatButtons.forEach(b => {
+            b.classList.toggle("active", b.id === "btn" + format.charAt(0).toUpperCase() + format.slice(1));
+        });
+    }
+}
+
+btnDate.onclick = () => setFormat("date");
+btnValue.onclick = () => setFormat("value");
+btnOriginal.onclick = () => setFormat("original");
+
+btnFilterSelected.onclick = () => {
+    document.querySelectorAll("table tr").forEach((tr, index) => {
+        if (index === 0 || index === 1) return;
+        tr.classList.toggle("hidden-row", !tr.classList.contains("selected-row"));
+    });
+};
+
+btnFilterNotSelected.onclick = () => {
+    document.querySelectorAll("table tr").forEach((tr, index) => {
+        if (index === 0 || index === 1) return;
+        tr.classList.toggle("hidden-row", tr.classList.contains("selected-row"));
+    });
+};
+
+btnFilterAll.onclick = () => {
+    document.querySelectorAll("table tr").forEach((tr, index) => {
+        if (index === 0 || index === 1) return;
+        tr.classList.remove("hidden-row");
+    });
+};
+
+btnClearSelection.onclick = () => {
+    document.querySelectorAll(".selected-row").forEach(tr => tr.classList.remove("selected-row"));
+    btnFilterAll.onclick();
+};
+
+document.getElementById("btnSaveExcel").onclick = () => {
+    const tables = document.querySelectorAll("#output table");
+    if (tables.length === 0) {
+        alert("Nenhuma tabela para salvar!");
+        return;
+    }
+
+    const wb = XLSX.utils.book_new();
+
+    tables.forEach((table, sheetIndex) => {
+        const ws_data = [];
+        const rows = table.querySelectorAll("tr");
+
+        if (rows.length > 1) {
+            const headerCells = rows[1].querySelectorAll("td");
+            ws_data.push(Array.from(headerCells).map(td => td.dataset.original));
+        }
+
+        for (let i = 2; i < rows.length; i++) {
+            const tr = rows[i];
+            if (tr.classList.contains("hidden-row")) continue;
+
+            const rowData = Array.from(tr.querySelectorAll("td")).map(td => {
+                const col = td.dataset.col;
+                const original = td.dataset.original;
+
+                if (columnFormats[col] === "date" || columnFormats[col] === "value") {
+                    const n = Number(original);
+                    return isNaN(n) ? original : n;
+                }
+                return original;
+            });
+
+            if (rowData.some(v => String(v).trim() !== "")) {
+                ws_data.push(rowData);
+            }
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+        // >>> NOVO: aplica formato real no Excel
+        Object.keys(ws).forEach(cell => {
+            if (!cell.match(/^[A-Z]+\d+$/)) return;
+            const colLetter = cell.match(/^[A-Z]+/)[0];
+            const colIndex = XLSX.utils.decode_col(colLetter);
+
+            if (columnFormats[colIndex] === "date") {
+                ws[cell].z = "dd/mm/yyyy";
+            }
+            if (columnFormats[colIndex] === "value") {
+                ws[cell].z = "#,##0.00";
+            }
+        });
+
+        XLSX.utils.book_append_sheet(wb, ws, "Planilha " + (sheetIndex + 1));
+    });
+
+    XLSX.writeFile(wb, originalFileName);
+};
+
+document.getElementById("inputExcel").addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    originalFileName = file.name;
+
+    const reader = new FileReader();
+    reader.onload = function (event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        let html = "";
+
+        workbook.SheetNames.forEach(sheetName => {
+            const sheet = workbook.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "" });
+            const maxCols = Math.max(...rows.map(r => r.length));
+
+            html += '<table><tr class="excel-col-letters">';
+            for (let c = 0; c < maxCols; c++) {
+                html += `<th data-col="${c}">${columnToLetter(c)}</th>`;
+            }
+            html += "</tr>";
+
+            rows.forEach((row, rowIndex) => {
+                const cls = rowIndex === 0 ? 'class="excel-header"' : "";
+                html += `<tr ${cls}>`;
+                for (let c = 0; c < maxCols; c++) {
+                    const v = row[c] ?? "";
+                    html += `<td data-col="${c}" data-original="${v}">${v}</td>`;
+                }
+                html += "</tr>";
+            });
+
+            html += "</table><hr>";
+        });
+
+        document.getElementById("output").innerHTML = html;
+
+        document.querySelectorAll("td, th").forEach(cell => {
+            cell.addEventListener("click", function (e) {
+
+                // >>> NOVO: registra formato da coluna
+                if (currentFormat && this.dataset.col !== undefined) {
+                    columnFormats[this.dataset.col] = currentFormat;
+                }
+
+                if (e.ctrlKey && this.tagName === "TD") {
+                    this.parentElement.classList.toggle("selected-row");
+                    return;
+                }
+                if (!currentFormat) return;
+
+                const col = this.dataset.col;
+                const table = this.closest("table");
+                table.querySelectorAll(`td[data-col="${col}"]`).forEach(td => {
+                    const o = td.dataset.original;
+                    if (currentFormat === "date") td.textContent = excelDateToDDMMYYYY(o);
+                    if (currentFormat === "value") td.textContent = formatValue(o);
+                    if (currentFormat === "original") td.textContent = o;
+                });
+            });
+
+            cell.addEventListener("dblclick", function () {
+                if (this.tagName !== "TD") return;
+                const temp = document.createElement("textarea");
+                temp.value = this.textContent;
+                document.body.appendChild(temp);
+                temp.select();
+                document.execCommand("copy");
+                document.body.removeChild(temp);
+                showToast();
+            });
+        });
+    };
+
+    reader.readAsArrayBuffer(file);
+    this.value = "";
+});
+</script>
+
+</body>
+</html>

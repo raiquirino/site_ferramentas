@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Raitec Solutions</title>
+  <title>Ferramentas Contábeis</title>
   <link rel="stylesheet" href="css/header.css" />
   <link rel="stylesheet" href="css/menu_lateral.css" />
   <link rel="stylesheet" href="css/conciliacao.css" />
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-  
-</head>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body class="ferramentas-page">
   <header>
@@ -39,52 +38,57 @@
       </ul>
     </aside>
 
-  <main>
+    <main>
+      <h2>Conciliador de contas</h2>
 
-    <h2>Ler Excel com Conciliação + Filtro + Totalização</h2>
+      <label>Excel Normal:</label>
 
-    <input type="file" id="inputExcel" accept=".xlsx,.xls"><br><br>
+      <input type="file" id="inputExcel" accept=".xlsx,.xls" style="vertical-align: middle;">
+      <label style="margin-left: 10px;">
+        <input type="checkbox" id="usarMacro1"> Macro Balancete Verif.
+      </label>
+      <!--
+      <label style="margin-left: 10px;">
+        <input type="checkbox" id="usarMacro2"> Macro 2
+      </label>
+      -->
 
-    <button id="btnDate">Data</button>
-    <button id="btnValue">Valor</button>
-    <button id="btnOriginal">Original</button>
-    <button id="btnDesativar">Desativar</button>
 
-    <br><br>
+      <br><br>
 
-    <label>Coluna 1:</label>
-    <input type="text" id="col1" maxlength="3">
 
-    <label>Coluna 2:</label>
-    <input type="text" id="col2" maxlength="3">
+      <button id="btnDate">Data</button>
+      <button id="btnValue">Valor</button>
+      <button id="btnOriginal">Original</button>
+      <button id="btnDesativar">Desativar</button>
 
-    <label>Resultado:</label>
-    <input type="text" id="colR" maxlength="3">
+      <br><br>
+      <label>Coluna 1:</label>
+      <input type="text" id="col1" maxlength="3">
+      <label>Coluna 2:</label>
+      <input type="text" id="col2" maxlength="3">
+      <label>Resultado:</label>
+      <input type="text" id="colR" maxlength="3">
 
-    <button id="btnConciliar">Conciliar</button>
+      <button id="btnConciliar">Conciliar</button>
 
-    <br><br>
+      <br><br>
+      <button id="btnConciliados">Conciliados</button>
+      <button id="btnNaoConciliados">Não Conciliados</button>
+      <button id="btnTodos">Todos</button>
 
-    <button id="btnConciliados">Conciliados</button>
-    <button id="btnNaoConciliados">Não Conciliados</button>
-    <button id="btnTodos">Todos</button>
+      <br><br>
+      <button id="btnSalvar">Salvar Excel</button>
 
-    <br><br>
-
-    <button id="btnSalvar">Salvar Excel na merda do excel</button>
-
-    <br><br>
-    <div id="totais"></div>
-
-    <br>
-    <div id="output"></div>
-
-    <div id="copiado-msg">Copiado!</div>
-
-  </main>
-  
+      <br><br>
+      <div id="totais"></div>
+      <br>
+      <div id="output"></div>
+      <div id="copiado-msg">Copiado!</div>
+    </main>
   </div>
-  <!-- JS do Conciliador -->
+
   <script src="js/conciliacao.js"></script>
+  <script src="js/conciliacao_macro.js"></script>
 </body>
 </html>

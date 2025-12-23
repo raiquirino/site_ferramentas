@@ -49,7 +49,39 @@ document.getElementById("inputExcel").addEventListener("click", function () {
 });
 
 // -----------------------------
-// Leitura Excel
+// Função que aplica o Macro (transformações específicas)
+// -----------------------------
+function aplicarMacro(ws) {
+    ws[3][0]  = ws[3][2];
+    ws[3][4]  = ws[3][3];
+    ws[3][7]  = ws[3][8];
+    ws[3][11] = ws[3][13];
+    ws[3][15] = ws[3][14];
+    ws[3][19] = ws[3][18];
+
+    ws.splice(0, 3); // remove primeiras linhas
+
+    function removerColunas(inicio, qtd) { ws.forEach(linha => linha.splice(inicio, qtd)); }
+    removerColunas(1, 3);
+    removerColunas(2, 2);
+    removerColunas(3, 3);
+    removerColunas(4, 3);
+    removerColunas(5, 3);
+    removerColunas(6, 6);
+
+    ws = ws.filter((linha, i) => i === 0 || linha[3] !== "");
+    ws.forEach((linha, i) => {
+        if (i !== 0) {
+            if (linha[4] === 0) linha[4] = "";
+            if (linha[5] === 0) linha[5] = "";
+        }
+    });
+
+    return ws;
+}
+
+// -----------------------------
+// Leitura Excel com opção de Macro
 // -----------------------------
 document.getElementById("inputExcel").addEventListener("change", function (e) {
     const reader = new FileReader();
@@ -61,7 +93,16 @@ document.getElementById("inputExcel").addEventListener("change", function (e) {
 
         workbook.SheetNames.forEach(name => {
             const sheet = workbook.Sheets[name];
-            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "" });
+            let rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "" });
+
+            // ========================
+            // Aqui você decide se aplica o macro ou não
+            // ========================
+            const aplicarMacroFlag = document.getElementById("usarMacro1")?.checked; // checkbox para ativar macro
+            if (aplicarMacroFlag) {
+                rows = aplicarMacro(rows);
+            }
+
             const maxCols = Math.max(...rows.map(r => r.length));
 
             let table = "<table><tr>";
@@ -85,7 +126,7 @@ document.getElementById("inputExcel").addEventListener("change", function (e) {
 
         document.getElementById("output").innerHTML = html;
 
-        // Removida a marcação verde ao clicar na coluna para formatar
+        // Evento para formatar células ao clicar (coluna inteira)
         document.querySelectorAll("td, th").forEach(cell => {
             cell.addEventListener("click", function () {
                 if (!currentFormat) return;
@@ -98,6 +139,7 @@ document.getElementById("inputExcel").addEventListener("change", function (e) {
                     else if (currentFormat === "value") td.textContent = formatValue(original);
                     else td.textContent = original;
                 });
+                atualizarTotais();
             });
         });
 
@@ -269,7 +311,6 @@ document.getElementById("btnSalvar").addEventListener("click", () => {
     });
 });
 
-
 // -----------------------------
 // Marcar/desmarcar linha inteira SOMENTE com CTRL + clique
 // -----------------------------
@@ -285,7 +326,6 @@ document.querySelector("#output").addEventListener("click", function (e) {
         row.classList.toggle("selected-row");
     }
 });
-
 
 // -----------------------------
 // Copiar célula com duplo clique (NÃO marca linha)

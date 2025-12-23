@@ -1,92 +1,3 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<title>Excel com Conciliação + Filtro + Totalização</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-<style>
-table { border-collapse: collapse; margin-bottom: 30px; }
-td, th { border: 1px solid #000; padding: 4px; cursor: pointer; }
-th { background: #eee; font-weight: bold; }
-.selected-column { background-color: #d0f0d0; }
-.selected-row { background-color: #fffa90 !important; }
-
-input[type=text] {
-    width: 60px;
-    padding: 5px;
-    margin-right: 10px;
-    text-transform: uppercase;
-}
-
-#totais {
-    margin-top: 10px;
-    font-weight: bold;
-}
-
-button {
-    margin-right: 5px;
-}
-
-#copiado-msg {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    background: #cfc;
-    padding: 10px 15px;
-    border: 1px solid #090;
-    border-radius: 5px;
-    display: none;
-    z-index: 9999;
-    font-weight: bold;
-}
-</style>
-</head>
-
-<body>
-
-<h2>Ler Excel com Conciliação + Filtro + Totalização</h2>
-
-<input type="file" id="inputExcel" accept=".xlsx,.xls"><br><br>
-
-<button id="btnDate">Formato Data</button>
-<button id="btnValue">Formato Valor</button>
-<button id="btnOriginal">Original</button>
-<button id="btnDesativar">Desativar Formato</button>
-
-<br><br>
-
-<label>Coluna 1:</label>
-<input type="text" id="col1" maxlength="3">
-
-<label>Coluna 2:</label>
-<input type="text" id="col2" maxlength="3">
-
-<label>Resultado:</label>
-<input type="text" id="colR" maxlength="3">
-
-<button id="btnConciliar" style="background:#cfc; font-weight:bold;">Conciliar</button>
-
-<br><br>
-
-<button id="btnConciliados" style="background:#d0ffd0;">Conciliados</button>
-<button id="btnNaoConciliados" style="background:#ffd0d0;">Não Conciliados</button>
-<button id="btnTodos" style="background:#d0d0ff;">Todos</button>
-
-<br><br>
-
-<button id="btnSalvar" style="background:#cfc; font-weight:bold;">Salvar Excel</button>
-
-<br><br>
-<div id="totais"></div>
-
-<br>
-<div id="output"></div>
-
-<div id="copiado-msg">Copiado!</div>
-
-<script>
-
 let currentFormat = null;
 
 // -----------------------------
@@ -174,6 +85,7 @@ document.getElementById("inputExcel").addEventListener("change", function (e) {
 
         document.getElementById("output").innerHTML = html;
 
+        // Removida a marcação verde ao clicar na coluna para formatar
         document.querySelectorAll("td, th").forEach(cell => {
             cell.addEventListener("click", function () {
                 if (!currentFormat) return;
@@ -186,8 +98,6 @@ document.getElementById("inputExcel").addEventListener("change", function (e) {
                     else if (currentFormat === "value") td.textContent = formatValue(original);
                     else td.textContent = original;
                 });
-                table.querySelectorAll("td, th").forEach(x => x.classList.remove("selected-column"));
-                table.querySelectorAll(`[data-col="${col}"]`).forEach(x => x.classList.add("selected-column"));
             });
         });
 
@@ -327,7 +237,6 @@ document.getElementById("btnSalvar").addEventListener("click", () => {
         const linhas = table.querySelectorAll("tr");
 
         for (let i = 1; i < linhas.length; i++) {
-
             if (i > 1 && linhas[i].style.display === "none") continue;
 
             const cells = linhas[i].querySelectorAll("th, td");
@@ -360,23 +269,33 @@ document.getElementById("btnSalvar").addEventListener("click", () => {
     });
 });
 
+
 // -----------------------------
-// Marcar/desmarcar linha inteira ao clicar (toggle)
+// Marcar/desmarcar linha inteira SOMENTE com CTRL + clique
 // -----------------------------
-document.querySelector("#output").addEventListener("click", function(e) {
+document.querySelector("#output").addEventListener("click", function (e) {
+    if (!e.ctrlKey) return; // BLOQUEIA clique normal
+
     const target = e.target;
     if (target.tagName === "TD") {
+        e.preventDefault();
+        e.stopPropagation();
+
         const row = target.parentElement;
-        row.classList.toggle("selected-row"); // alterna a classe
+        row.classList.toggle("selected-row");
     }
 });
 
+
 // -----------------------------
-// Copiar célula ao dar duplo clique
+// Copiar célula com duplo clique (NÃO marca linha)
 // -----------------------------
-document.querySelector("#output").addEventListener("dblclick", function(e) {
+document.querySelector("#output").addEventListener("dblclick", function (e) {
     const target = e.target;
     if (target.tagName === "TD") {
+        e.preventDefault();
+        e.stopPropagation();
+
         const texto = target.textContent.trim();
         if (texto) {
             navigator.clipboard.writeText(texto).then(() => {
@@ -386,12 +305,7 @@ document.querySelector("#output").addEventListener("dblclick", function(e) {
                     msg.style.display = "block";
                     setTimeout(() => msg.style.display = "none", 1500);
                 }
-            }).catch(err => console.error("Erro ao copiar:", err));
+            });
         }
     }
 });
-
-</script>
-
-</body>
-</html>

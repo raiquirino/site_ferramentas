@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>AA_01_Arrumar_Bal_Verif</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+body {
+    font-family: Arial, Arial, sans-serif;
+    background: #f2f2f2;
+    padding: 20px;
+}
+.box {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 1100px;
+}
+button {
+    padding: 10px 15px;
+    margin-top: 10px;
+}
+table {
+    border-collapse: collapse;
+    margin-top: 20px;
+    width: 100%;
+    background: white;
+}
+th, td {
+    border: 1px solid #ccc;
+    padding: 6px;
+    font-size: 13px;
+}
+th {
+    background: #eaeaea;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+    <h2>AA_01_Arrumar_Bal_Verif</h2>
+
+    <input type="file" id="file" accept=".xls,.xlsx,.xlsm">
+    <br>
+    <button onclick="executar()">Executar Macro</button>
+    <button onclick="baixar()" disabled id="btnDownload">Baixar Excel</button>
+
+    <div id="tabela"></div>
+</div>
+
+<script>
+let planilhaFinal = null;
+
+function executar() {
+    const input = document.getElementById("file");
+    if (!input.files.length) {
+        alert("Selecione um arquivo Excel.");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: "array" });
+        const wsName = wb.SheetNames[0];
+        let ws = XLSX.utils.sheet_to_json(wb.Sheets[wsName], { header: 1, defval: "" });
+
+        // ========= VBA -> JS (EXATO) =========
+
+        // Movimentações
+        ws[3][0]  = ws[3][2];   // C4 → A4
+        ws[3][4]  = ws[3][3];   // D4 → E4
+        ws[3][7]  = ws[3][8];   // I4 → H4
+        ws[3][11] = ws[3][13];  // N4 → L4
+        ws[3][15] = ws[3][14];  // O4 → P4
+        ws[3][19] = ws[3][18];  // S4 → T4
+
+        // Remove linhas 1 a 3
+        ws.splice(0, 3);
+
+        // Remove colunas (mesma ordem do VBA)
+        function delCols(start, count) {
+            ws.forEach(r => r.splice(start, count));
+        }
+        delCols(1, 3); // B:D
+        delCols(2, 2); // C:D
+        delCols(3, 3); // D:F
+        delCols(4, 3); // E:G
+        delCols(5, 3); // F:H
+        delCols(6, 6); // G:L
+
+        // Remove linhas com coluna D vazia
+        ws = ws.filter((r, i) => i === 0 || r[3] !== "");
+
+        // Limpa zeros colunas E e F
+        ws.forEach((r, i) => {
+            if (i === 0) return;
+            if (r[4] === 0) r[4] = "";
+            if (r[5] === 0) r[5] = "";
+        });
+
+        planilhaFinal = ws;
+
+        mostrarTabela(ws);
+        document.getElementById("btnDownload").disabled = false;
+    };
+
+    reader.readAsArrayBuffer(input.files[0]);
+}
+
+function mostrarTabela(dados) {
+    let html = "<table><thead><tr>";
+
+    dados[0].forEach(h => html += `<th>${h}</th>`);
+    html += "</tr></thead><tbody>";
+
+    for (let i = 1; i < dados.length; i++) {
+        html += "<tr>";
+        dados[i].forEach(c => html += `<td>${c}</td>`);
+        html += "</tr>";
+    }
+
+    html += "</tbody></table>";
+    document.getElementById("tabela").innerHTML = html;
+}
+
+function baixar() {
+    const ws = XLSX.utils.aoa_to_sheet(planilhaFinal);
+
+    // Negrito no cabeçalho A1:F1
+    for (let c = 0; c <= 5; c++) {
+        const cell = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws[cell]) ws[cell].s = { font: { bold: true } };
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Processado");
+    XLSX.writeFile(wb, "AA_01_Arrumar_Bal_Verif.xlsx");
+}
+</script>
+
+</body>
+</html>
