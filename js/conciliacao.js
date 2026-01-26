@@ -306,7 +306,9 @@ document.getElementById("btnSalvar").addEventListener("click", () => {
         const ws = XLSX.utils.aoa_to_sheet(data);
         XLSX.utils.book_append_sheet(workbook, ws, "Sheet1");
 
-        let nomeArquivo = document.getElementById("inputExcel").files[0]?.name || "planilha.xlsx";
+        let arquivoOriginal = document.getElementById("inputExcel").files[0]?.name || "planilha";
+        let nomeArquivo = arquivoOriginal.replace(/\.[^/.]+$/, "") + ".xlsx";
+
         XLSX.writeFile(workbook, nomeArquivo);
     });
 });
