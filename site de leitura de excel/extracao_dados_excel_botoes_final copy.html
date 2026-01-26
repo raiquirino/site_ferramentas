@@ -15,11 +15,6 @@
         .selected-row { background-color: #fff3a0; }
         .hidden-row { display: none !important; }
 
-        /* >>> NOVO: seleção apenas de células */
-        .selected-cell {
-            background-color: #fff3a0;
-        }
-
         #toast {
             position: fixed;
             bottom:20px;
@@ -96,8 +91,9 @@
 <script>
 let currentFormat = null;
 let originalFileName = "planilha.xlsx";
+
+// >>> NOVO: guarda formato por coluna
 let columnFormats = {};
-let lastSelectedCell = null;
 
 function showToast() {
     const toast = document.getElementById("toast");
@@ -172,7 +168,6 @@ btnFilterAll.onclick = () => {
 
 btnClearSelection.onclick = () => {
     document.querySelectorAll(".selected-row").forEach(tr => tr.classList.remove("selected-row"));
-    document.querySelectorAll(".selected-cell").forEach(td => td.classList.remove("selected-cell"));
     btnFilterAll.onclick();
 };
 
@@ -198,13 +193,38 @@ document.getElementById("btnSaveExcel").onclick = () => {
             const tr = rows[i];
             if (tr.classList.contains("hidden-row")) continue;
 
-            const rowData = Array.from(tr.querySelectorAll("td")).map(td => td.dataset.original);
+            const rowData = Array.from(tr.querySelectorAll("td")).map(td => {
+                const col = td.dataset.col;
+                const original = td.dataset.original;
+
+                if (columnFormats[col] === "date" || columnFormats[col] === "value") {
+                    const n = Number(original);
+                    return isNaN(n) ? original : n;
+                }
+                return original;
+            });
+
             if (rowData.some(v => String(v).trim() !== "")) {
                 ws_data.push(rowData);
             }
         }
 
         const ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+        // >>> NOVO: aplica formato real no Excel
+        Object.keys(ws).forEach(cell => {
+            if (!cell.match(/^[A-Z]+\d+$/)) return;
+            const colLetter = cell.match(/^[A-Z]+/)[0];
+            const colIndex = XLSX.utils.decode_col(colLetter);
+
+            if (columnFormats[colIndex] === "date") {
+                ws[cell].z = "dd/mm/yyyy";
+            }
+            if (columnFormats[colIndex] === "value") {
+                ws[cell].z = "#,##0.00";
+            }
+        });
+
         XLSX.utils.book_append_sheet(wb, ws, "Planilha " + (sheetIndex + 1));
     });
 
@@ -252,32 +272,25 @@ document.getElementById("inputExcel").addEventListener("change", function (e) {
         document.querySelectorAll("td, th").forEach(cell => {
             cell.addEventListener("click", function (e) {
 
-                if (e.shiftKey && lastSelectedCell && this.tagName === "TD") {
-                    const col = this.dataset.col;
-                    const table = this.closest("table");
-
-                    if (lastSelectedCell.dataset.col === col) {
-                        const cells = Array.from(table.querySelectorAll(`td[data-col="${col}"]`));
-                        const start = cells.indexOf(lastSelectedCell);
-                        const end = cells.indexOf(this);
-                        const [min, max] = start < end ? [start, end] : [end, start];
-
-                        for (let i = min; i <= max; i++) {
-                            cells[i].classList.add("selected-cell");
-                        }
-                    }
-                    return;
+                // >>> NOVO: registra formato da coluna
+                if (currentFormat && this.dataset.col !== undefined) {
+                    columnFormats[this.dataset.col] = currentFormat;
                 }
 
                 if (e.ctrlKey && this.tagName === "TD") {
                     this.parentElement.classList.toggle("selected-row");
-                    lastSelectedCell = this;
                     return;
                 }
+                if (!currentFormat) return;
 
-                if (this.tagName === "TD") {
-                    lastSelectedCell = this;
-                }
+                const col = this.dataset.col;
+                const table = this.closest("table");
+                table.querySelectorAll(`td[data-col="${col}"]`).forEach(td => {
+                    const o = td.dataset.original;
+                    if (currentFormat === "date") td.textContent = excelDateToDDMMYYYY(o);
+                    if (currentFormat === "value") td.textContent = formatValue(o);
+                    if (currentFormat === "original") td.textContent = o;
+                });
             });
 
             cell.addEventListener("dblclick", function () {

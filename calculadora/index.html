@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Calculadora de Print - Números Brasileiros</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+  h2 { text-align: center; }
+  #numbers, #results { margin-top: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9; white-space: pre-wrap; font-weight: 600; }
+  canvas { display: none; }
+  input { margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<h2>Calculadora de Print - Padrão Brasileiro</h2>
+<p>Cole o print com <strong>Ctrl+V</strong> ou envie um arquivo:</p>
+
+<input type="file" id="fileInput" accept="image/*">
+<div id="numbers">Números encontrados aparecerão aqui.</div>
+<div id="results">Resultados aparecerão aqui.</div>
+
+<canvas id="canvas"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
+<script>
+const numbersDiv = document.getElementById('numbers');
+const resultsDiv = document.getElementById('results');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const fileInput = document.getElementById('fileInput');
+
+// Corrige OCR e limpa texto
+function cleanText(text) {
+    text = text.replace(/[OIl]/g, c => (c==='O'?'0':'1')); // Corrige caracteres comuns
+    text = text.replace(/[^\d,.\s]/g, ''); // mantém apenas números, vírgula, ponto e espaços
+    text = text.replace(/[\s]+/g, '\n'); // normaliza separadores para linhas
+    return text;
+}
+
+// Junta números quebrados em duas linhas (ex.: 1.949, + 50 => 1.949,50)
+function mergeBrokenNumbers(lines){
+    const merged = [];
+    for(let i=0;i<lines.length;i++){
+        let line = lines[i];
+        if(i<lines.length-1){
+            if(/[.,]$/.test(line) && /^[0-9]{1,2}$/.test(lines[i+1])){
+                line = line + lines[i+1];
+                i++;
+            }
+        }
+        merged.push(line);
+    }
+    return merged;
+}
+
+// Extrai números no padrão brasileiro
+function extractNumbers(text){
+    const lines = text.split('\n').map(l=>l.trim()).filter(l=>l);
+    const merged = mergeBrokenNumbers(lines);
+    const numbers = [];
+    merged.forEach(l=>{
+        const regex = /(?:\d{1,3}(?:\.\d{3})*|\d+)(?:,\d+)?/g;
+        const matches = l.match(regex);
+        if(matches) numbers.push(...matches);
+    });
+    return numbers;
+}
+
+// Converte string para float (padrão brasileiro)
+function parseBrazilianNumber(str){
+    if(!str) return 0;
+    return parseFloat(str.replace(/\./g,'').replace(',','.'));
+}
+
+// Calcula soma, média e produto
+function calculate(numbers){
+    const nums = numbers.map(parseBrazilianNumber);
+    const sum = nums.reduce((a,b)=>a+b,0);
+    const avg = nums.length ? sum/nums.length : 0;
+    const prod = nums.reduce((a,b)=>a*b,1);
+    return {sum, avg, prod};
+}
+
+// Pré-processamento da imagem
+function preprocessImage(img){
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img,0,0);
+
+    const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+    const data = imageData.data;
+
+    for(let i=0;i<data.length;i+=4){
+        let gray = 0.3*data[i]+0.59*data[i+1]+0.11*data[i+2];
+        gray = gray>140?255:0;
+        data[i]=data[i+1]=data[i+2]=gray;
+    }
+    ctx.putImageData(imageData,0,0);
+    return canvas.toDataURL();
+}
+
+// Processa imagem (File ou DataURL)
+function processImage(fileOrDataURL){
+    const img = new Image();
+    img.onload = ()=>{
+        const processedDataURL = preprocessImage(img);
+        numbersDiv.textContent = 'Processando...';
+        resultsDiv.textContent = '';
+
+        Tesseract.recognize(processedDataURL, 'por', {
+            tessedit_char_whitelist: '0123456789,.',
+            tessedit_pageseg_mode: 11
+        }).then(({data:{text}})=>{
+            const cleaned = cleanText(text);
+            const numbers = extractNumbers(cleaned);
+
+            if(numbers.length){
+                numbersDiv.textContent = 'Números encontrados:\n'+numbers.join('\n');
+                const {sum, avg, prod} = calculate(numbers);
+                resultsDiv.textContent =
+                    'Soma: '+sum.toLocaleString('pt-BR', {minimumFractionDigits:2})+'\n'+
+                    'Média: '+avg.toLocaleString('pt-BR', {minimumFractionDigits:2})+'\n'+
+                    'Produto: '+prod.toLocaleString('pt-BR', {minimumFractionDigits:2});
+            } else {
+                numbersDiv.textContent = 'Nenhum número encontrado';
+                resultsDiv.textContent = '';
+            }
+        }).catch(err=>{
+            numbersDiv.textContent = 'Erro ao processar OCR';
+            resultsDiv.textContent = '';
+            console.error(err);
+        });
+    };
+    if(fileOrDataURL instanceof File){
+        img.src = URL.createObjectURL(fileOrDataURL);
+    } else {
+        img.src = fileOrDataURL;
+    }
+}
+
+// Paste do clipboard
+document.addEventListener('paste', (e)=>{
+    const items = e.clipboardData.items;
+    for(const item of items){
+        if(item.type.indexOf('image')!==-1){
+            const file = item.getAsFile();
+            processImage(file);
+            break;
+        }
+    }
+});
+
+// Upload de arquivo
+fileInput.addEventListener('change', ()=>{
+    if(fileInput.files.length){
+        processImage(fileInput.files[0]);
+    }
+});
+</script>
+
+</body>
+</html>
