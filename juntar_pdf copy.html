@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Raitec Solutions - Juntar e Separar PDF</title>
+  <title>Raitec Solutions - Juntar PDF</title>
   <link rel="stylesheet" href="css/header.css" />
   <link rel="stylesheet" href="css/menu_lateral.css" />
 </head>
@@ -38,27 +38,14 @@
     <main>
       <h2>📎 Juntar Arquivos PDF</h2>
       <input type="file" id="pdfFiles" multiple accept="application/pdf" />
-      <br><br>
+      <br>
       <button onclick="mergePDFs()">Juntar e Baixar</button>
       <p id="status"></p>
-
-      <hr><br>
-
-      <h2>✂️ Separar PDF</h2>
-      <input type="file" id="pdfSplitFile" accept="application/pdf" />
-      <br><br>
-      <button onclick="splitPDF()">Separar e Baixar ZIP</button>
-      <p id="splitStatus"></p>
     </main>
   </div>
 
-  <!-- Bibliotecas -->
   <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-
-  <!-- Seu JS -->
   <script src="js/juntar_pdf.js" defer></script>
   <script src="js/menu_lateral.js" defer></script>
-
 </body>
 </html>
